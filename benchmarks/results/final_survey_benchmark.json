@@ -701,7 +701,83 @@
       "code": "import torch\ndef repair_corrupted_matrix(W_damaged):\n    row_rms = torch.sqrt((W_damaged ** 2).sum(1, keepdim=True))\n    threshold = row_rms.quantile(0.999)\n    return W_damaged * (row_rms <= threshold).float() + torch.randn_like(W_damaged) * (row_rms > threshold).float()",
       "calibrated_row_surgery_acc": 66.67,
       "calibrated_recovery_pct": 88.9,
-      "calibrated_row_recall_pct": 100.0
+      "calibrated_row_recall_pct": 100.0,
+      "exact_36_layer_healthy_row_rms_ratios": [
+        4.2183,
+        10.0632,
+        6.3018,
+        3.8661,
+        4.2536,
+        4.2346,
+        3.0532,
+        2.3795,
+        2.6148,
+        2.3502,
+        2.4334,
+        2.3192,
+        2.5628,
+        2.3996,
+        2.8948,
+        3.1358,
+        3.6942,
+        3.2237,
+        3.1506,
+        3.1449,
+        2.5309,
+        2.2679,
+        2.2991,
+        2.1926,
+        2.1511,
+        1.9639,
+        1.9168,
+        1.8524,
+        1.9435,
+        1.9713,
+        1.9859,
+        1.9844,
+        1.9494,
+        2.1249,
+        6.6321,
+        3.8295
+      ],
+      "exact_36_layer_damaged_row_rms_ratios": [
+        4.2183,
+        10.0632,
+        6.3018,
+        3.8661,
+        4.2536,
+        4.2346,
+        3.0532,
+        2.3795,
+        2.6148,
+        2.3502,
+        2.4334,
+        2.3192,
+        2.5628,
+        2.3996,
+        2.8948,
+        3.1358,
+        3.6942,
+        3.2237,
+        3.1506,
+        1397.0,
+        2.5309,
+        2.2679,
+        2.2991,
+        2.1926,
+        2.1511,
+        1.9639,
+        1.9168,
+        1.8524,
+        1.9435,
+        1.9713,
+        1.9859,
+        1.9844,
+        1.9494,
+        2.1249,
+        6.6321,
+        3.8295
+      ]
     }
   },
   "unblocking_vs_new_skill_8b": {
@@ -721,5 +797,126 @@
       "associative_lowrank_ttt": 25.0
     }
   },
-  "elapsed_sec": 426.3
+  "elapsed_sec": 426.3,
+  "exact_multiround_sigma_trajectories": {
+    "source_logs": [
+      "runs/exp1_all_baselines_8round/all_results_partial.json",
+      "runs/exp6_complete_form_v2/all_results.json"
+    ],
+    "ewc_ttt": [
+      1.8182,
+      2.0873,
+      3.1906,
+      3.3016,
+      3.425,
+      3.7303,
+      3.9988,
+      4.1083
+    ],
+    "naive_ttt": [
+      1.6717,
+      1.7354,
+      2.0167,
+      2.0663,
+      2.1584,
+      2.1923,
+      2.2791,
+      2.3611
+    ],
+    "homeo_hwgm": [
+      0.984,
+      1.0694,
+      1.0714,
+      1.0719,
+      1.0722,
+      1.0723,
+      1.0725,
+      1.0724
+    ]
+  },
+  "exact_exp3_noise_sweep": {
+    "source_log": "runs/exp3_noise_sweep/all_results.json",
+    "noise_levels_pct": [
+      0,
+      25,
+      50,
+      70
+    ],
+    "avg_trap_rate_pct": {
+      "spectral_only": [
+        0.0,
+        12.66,
+        33.47,
+        17.24
+      ],
+      "ties_merging": [
+        0.0,
+        6.81,
+        8.8,
+        20.96
+      ],
+      "naive_ttt": [
+        0.0,
+        5.28,
+        10.0,
+        2.36
+      ],
+      "hwgm_homeo": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "peak_round_trap_rate_pct": {
+      "spectral_only": [
+        0.0,
+        99.07,
+        100.0,
+        88.89
+      ],
+      "ties_merging": [
+        0.0,
+        25.0,
+        30.56,
+        100.0
+      ],
+      "naive_ttt": [
+        0.0,
+        33.33,
+        48.89,
+        18.89
+      ],
+      "hwgm_homeo": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "exact_exp5_decoupled_scaling": {
+    "source_log": "runs/exp5_sculptor_scaling/all_results.json",
+    "configs": [
+      "1.5B Self-Sculpt",
+      "1.5B + 7B Local",
+      "1.5B + 9B Local",
+      "1.5B + Flash 1KB",
+      "1.5B + Pro 1KB"
+    ],
+    "avg_acc_pct": [
+      21.58,
+      44.51,
+      45.13,
+      43.47,
+      44.51
+    ],
+    "avg_trap_pct": [
+      6.25,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  }
 }

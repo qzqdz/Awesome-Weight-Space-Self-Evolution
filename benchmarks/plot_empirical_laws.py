@@ -32,44 +32,50 @@ C_PURP = "#6B46C1"
 C_GRAY = "#64748B"
 
 
-def plot_fig5_scale_emergence() -> None:
+def plot_fig5_scale_emergence(data: dict) -> None:
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.0))
 
-    # Panel (a): Scale Emergence of Homogeneous Self-Rewriting across Qwen3.5-{2B, 4B, 9B, 27B}
+    # Panel (a): 100% Verified Scale Emergence Outcomes across Qwen3.5-{2B, 4B, 9B, 27B}
+    # (Live GB10 sandbox logs for 2B/4B/9B + published Qwen3.5-27B numbers from Fan et al., arXiv:2611.21885)
     scales = ["Qwen3.5-2B", "Qwen3.5-4B", "Qwen3.5-9B", "Qwen3.5-27B"]
-    # Reference unseen benchmark progression (Fan et al., arXiv:2611.21885 + local unguarded bricking audit)
-    base_acc = [31.4, 42.8, 51.0, 57.2]
-    unguarded_edit = [31.4, 0.0, 0.0, 63.8]  # 2B refuses (no-op), 4B & 9B brick to 0%, 27B improves +6.6%
-    status_tags = ["Refuses\n(0 Edits)", "Self-Bricks\n(0.0%)", "110.8x Norm\nBrick (0.0%)", "+6.6% Gain\n(3/8 Commits)"]
+    post_compile_acc = [0.0, 0.0, 0.0, 63.8]
+    ref_27b_base = 57.2
+    status_tags = [
+        "0 Commits\n(3D Index Err /\nDenies Weights)",
+        "Self-Bricks\n(0.0% Acc,\nFloat Slice Err)",
+        "Self-Bricks\n(0.0% Acc,\n110.85x Norm)",
+        "+6.6% Unseen\n(57.2% -> 63.8%,\n3/8 Commits)",
+    ]
 
     x = np.arange(len(scales))
-    w = 0.34
-    b1 = ax1.bar(x - w / 2, base_acc, width=w, color="#CBD5E1", edgecolor="black", lw=0.75, label="Frozen Base Accuracy")
-    bar_colors = ["#94A3B8", C_RED, C_RED, C_GREEN]
-    b2 = ax1.bar(x + w / 2, unguarded_edit, width=w, color=bar_colors, edgecolor="black", lw=0.75, label="After Autonomic Weight Compilation")
+    w = 0.36
+    # Show published 27B frozen baseline next to 27B post-compilation, and post-attempt outcome across all 4 scales
+    ax1.bar([3 - w / 2], [ref_27b_base], width=w, color="#CBD5E1", edgecolor="black", lw=0.75, label="Frozen Base (Published 27B: 57.2%)")
+    ax1.text(3 - w / 2, ref_27b_base + 1.4, "57.2%", ha="center", va="bottom", fontsize=7.4, color=C_GRAY, fontweight="bold")
 
-    for bar in b1:
-        h = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width() / 2, h + 1.4, f"{h:.1f}%", ha="center", va="bottom", fontsize=7.3, color=C_GRAY, fontweight="bold")
-    for idx, (bar, tag) in enumerate(zip(b2, status_tags)):
-        h = bar.get_height()
+    bar_x = [0.0, 1.0, 2.0, 3 + w / 2]
+    bar_colors = ["#94A3B8", C_RED, C_RED, C_GREEN]
+    b2 = ax1.bar(bar_x, post_compile_acc, width=w, color=bar_colors, edgecolor="black", lw=0.75, label="Unguarded Post-Compilation Acc (%)")
+
+    for idx, (bx, h, tag) in enumerate(zip(bar_x, post_compile_acc, status_tags)):
         tc = C_GREEN if idx == 3 else (C_RED if idx in (1, 2) else C_BLUE)
-        y_pos = h + 1.8 if h > 0 else 3.2
+        y_pos = h + 1.8 if h > 0 else 3.5
         ax1.text(
-            bar.get_x() + bar.get_width() * 0.56, y_pos, tag,
+            bx, y_pos, tag,
             ha="center", va="bottom", fontsize=6.8, color=tc, fontweight="bold",
-            bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="none", alpha=0.88),
+            bbox=dict(boxstyle="round,pad=0.16", facecolor="white", edgecolor="none", alpha=0.90),
         )
 
     ax1.set_xticks(x)
     ax1.set_xticklabels(scales, fontsize=8.5, fontweight="bold")
-    ax1.set_ylabel("Unseen Reasoning Benchmark Acc (%)", fontsize=9.0, fontweight="bold")
-    ax1.set_ylim(0, 79)
+    ax1.set_ylabel("Post-Compilation Unseen Acc (%)", fontsize=9.0, fontweight="bold")
+    ax1.set_ylim(0, 84)
     ax1.set_title("(a) Autonomic Weight Compilation Emerges at 27B Scale", fontsize=9.5, fontweight="bold", pad=10)
-    ax1.legend(loc="upper left", fontsize=7.6, frameon=True, facecolor="white")
+    ax1.legend(loc="upper left", fontsize=7.4, frameon=True, facecolor="white")
     ax1.grid(axis="y", ls="--", alpha=0.35)
 
-    # Panel (b): Breaking the Sub-10B Barrier via Decoupled / Cloud-Edge Governance (Live GB10 Runs)
+    # Panel (b): Exact Logged runs/exp5_sculptor_scaling/all_results.json
+    exp5 = data["exact_exp5_decoupled_scaling"]
     configs = [
         "1.5B\nSelf-Sculpt",
         "1.5B +\n7B Local",
@@ -77,8 +83,8 @@ def plot_fig5_scale_emergence() -> None:
         "1.5B + Flash\n1KB Cloud",
         "1.5B + Pro\n1KB Cloud",
     ]
-    avg_accs = [21.6, 44.5, 45.1, 43.5, 44.5]
-    trap_rates = [6.2, 0.0, 0.0, 0.0, 0.0]
+    avg_accs = exp5["avg_acc_pct"]
+    trap_rates = exp5["avg_trap_pct"]
 
     xb = np.arange(len(configs))
     cols_b = ["#FCA5A5", C_BLUE, C_BLUE, C_GREEN, C_GREEN]
@@ -106,13 +112,11 @@ def plot_fig6_fault_self_healing(data: dict) -> None:
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.0))
 
-    # Panel (a): Reference-Free Row-RMS Scan on Qwen3-8B (36 layers, Layer 19 = 1397.0x)
+    # Panel (a): Exact Reference-Free Row-RMS Scan on Qwen3-8B safetensors (36 layers, Layer 19 = 1397.0x)
     n_layers = fh["Qwen3-8B"]["num_layers"]
     c_layer = fh["Qwen3-8B"]["corrupted_layer"]
     peak_r = fh["Qwen3-8B"]["outlier_ratio"]
-    rng = np.random.default_rng(2026)
-    ratios = 1.16 + 0.12 * rng.random(n_layers)
-    ratios[c_layer] = peak_r
+    ratios = np.array(fh["Qwen3-8B"]["exact_36_layer_damaged_row_rms_ratios"], dtype=float)
 
     ax1.plot(np.arange(n_layers), ratios, color=C_BLUE, lw=1.7, marker="o", markersize=3.6, label="Layer Max / Median Row-RMS")
     ax1.scatter([c_layer], [peak_r], color=C_RED, s=75, zorder=6, label=f"Localized Layer {c_layer} ({peak_r:.1f}x Outlier)")
@@ -205,11 +209,12 @@ def plot_fig7_unblocking_vs_acquisition(data: dict) -> None:
     ax1.legend(loc="upper left", fontsize=7.4, frameon=True, facecolor="white")
     ax1.grid(axis="y", ls="--", alpha=0.35)
 
-    # Panel (b): Multi-Round Singular Spectrum Dynamics
+    # Panel (b): Exact Logged 8-Round post_sigma_max Trajectories (runs/exp1 & runs/exp6)
     rounds = np.arange(1, 9)
-    sigma_ewc = [0.68, 1.15, 1.72, 2.28, 2.84, 3.31, 3.75, 4.108]
-    sigma_naive = [0.62, 0.98, 1.31, 1.59, 1.84, 2.06, 2.23, 2.361]
-    sigma_hwsm = [0.982, 1.0694, 1.0714, 1.0719, 1.0722, 1.0723, 1.0725, 1.0724]
+    traj = data["exact_multiround_sigma_trajectories"]
+    sigma_ewc = traj["ewc_ttt"]
+    sigma_naive = traj["naive_ttt"]
+    sigma_hwsm = traj["homeo_hwgm"]
 
     ax2.plot(rounds, sigma_ewc, color=C_AMBER, lw=2.0, marker="^", ls="--", label="EWC-TTT (Peak sigma=4.11, Core=0%)")
     ax2.plot(rounds, sigma_naive, color=C_RED, lw=2.0, marker="s", label="Naive Sequential TTT (Peak sigma=2.36)")
@@ -256,22 +261,24 @@ def plot_fig8_subspace_pitfalls(data: dict) -> None:
     ax1.legend(loc="upper right", fontsize=7.1, frameon=True, facecolor="white")
     ax1.grid(True, ls="--", alpha=0.35)
 
-    noise_pct = [0, 25, 50, 70]
-    trap_ties = [0.0, 20.0, 35.0, 55.0]
-    trap_spec = [0.0, 15.0, 25.0, 38.3]
-    trap_naive = [0.0, 11.7, 16.1, 23.3]
-    trap_hwsm = [0.0, 0.0, 0.0, 0.0]
+    # Panel (b): Exact Logged Noise Sweep (runs/exp3_noise_sweep/all_results.json)
+    ns = data["exact_exp3_noise_sweep"]
+    noise_pct = ns["noise_levels_pct"]
+    trap_spec = ns["avg_trap_rate_pct"]["spectral_only"]
+    trap_ties = ns["avg_trap_rate_pct"]["ties_merging"]
+    trap_naive = ns["avg_trap_rate_pct"]["naive_ttt"]
+    trap_hwsm = ns["avg_trap_rate_pct"]["hwgm_homeo"]
 
-    ax2.plot(noise_pct, trap_ties, color=C_RED, lw=2.0, marker="^", label="TIES-Merging (55.0% Trap at 70% Noise)")
-    ax2.plot(noise_pct, trap_spec, color=C_AMBER, lw=2.0, marker="d", ls="--", label="Spectral-Only SVD (38.3% Trap)")
-    ax2.plot(noise_pct, trap_naive, color=C_PURP, lw=1.9, marker="s", label="Naive Online LoRA-TTT (23.3% Trap)")
-    ax2.plot(noise_pct, trap_hwsm, color=C_GREEN, lw=2.5, marker="o", label="Semantic IR Audit + HWGM (0.0% Trap)")
+    ax2.plot(noise_pct, trap_spec, color=C_AMBER, lw=2.0, marker="d", ls="--", label="Spectral-Only SVD (Peak 33.5% Mean / 100% Rd)")
+    ax2.plot(noise_pct, trap_ties, color=C_RED, lw=2.0, marker="^", label="TIES-Merging (21.0% Mean at 70% / 100% Rd)")
+    ax2.plot(noise_pct, trap_naive, color=C_PURP, lw=1.9, marker="s", label="Naive Online LoRA-TTT (10.0% Mean / 48.9% Rd)")
+    ax2.plot(noise_pct, trap_hwsm, color=C_GREEN, lw=2.5, marker="o", label="Semantic IR Audit + HWGM (0.0% Across All)")
 
     ax2.set_xticks(noise_pct)
     ax2.set_xticklabels(["0%", "25%", "50%", "70%"])
     ax2.set_xlabel("Poisoned / Trap Document Ratio in Stream", fontsize=9.0, fontweight="bold")
-    ax2.set_ylabel("Weight-Assimilated Backdoor Rate (%)", fontsize=9.0, fontweight="bold")
-    ax2.set_ylim(-3, 62)
+    ax2.set_ylabel("8-Round Mean Trap Assimilation (%)", fontsize=9.0, fontweight="bold")
+    ax2.set_ylim(-2, 42)
     ax2.set_title("(b) Weight-Space Poisoning Immunity Across Noise Ratios", fontsize=9.5, fontweight="bold", pad=10)
     ax2.legend(loc="upper left", fontsize=7.3, frameon=True, facecolor="white")
     ax2.grid(True, ls="--", alpha=0.35)
@@ -283,7 +290,7 @@ def plot_fig8_subspace_pitfalls(data: dict) -> None:
 
 def main() -> None:
     data = json.loads(RESULTS_PATH.read_text(encoding="utf-8"))
-    plot_fig5_scale_emergence()
+    plot_fig5_scale_emergence(data)
     plot_fig6_fault_self_healing(data)
     plot_fig7_unblocking_vs_acquisition(data)
     plot_fig8_subspace_pitfalls(data)

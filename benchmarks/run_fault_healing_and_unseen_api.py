@@ -29,8 +29,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-import os
-RESULTS_DIR = Path(__file__).resolve().parent / "results"
+SURVEY_DIR = Path(__file__).resolve().parents[1]
+RESULTS_DIR = SURVEY_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 SDPA_MODELS = {

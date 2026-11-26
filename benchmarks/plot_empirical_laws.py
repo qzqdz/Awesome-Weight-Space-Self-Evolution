@@ -125,41 +125,47 @@ def plot_fig6_fault_self_healing(data: dict) -> None:
     ax1.set_xlabel("Decoder Layer Index (Qwen3-8B, 36 Layers)", fontsize=9.0, fontweight="bold")
     ax1.set_ylabel("Row-RMS Outlier Ratio (log scale)", fontsize=9.0, fontweight="bold")
     ax1.set_ylim(0.8, peak_r * 4.5)
-    ax1.set_title("(a) Zero-Backup Tensor Scan Pinpoints Damaged Layer", fontsize=9.6, fontweight="bold", pad=10)
+    ax1.set_title("(a) Reference-Free Tensor Scan Pinpoints Damaged Layer", fontsize=9.5, fontweight="bold", pad=10)
     ax1.legend(loc="upper right", fontsize=7.5, frameon=True, facecolor="white")
     ax1.grid(True, which="both", ls="--", alpha=0.3)
 
-    # Panel (b): Live Fault-Healing Comparison Across 5 Methods + 27B Multimodal Reference
-    labels = ["Qwen2.5-7B\n(Local Math)", "Qwen3-8B\n(Local Math)", "Qwen3.5-27B\n(Vision Avg [Ref])"]
-    v_clean = [fh["Qwen2.5-7B"]["clean_acc"], fh["Qwen3-8B"]["clean_acc"], 84.6]
-    v_corr = [fh["Qwen2.5-7B"]["corrupted_acc"], fh["Qwen3-8B"]["corrupted_acc"], 7.3]
-    v_ttt = [fh["Qwen2.5-7B"]["naive_ttt_acc"], fh["Qwen3-8B"]["naive_ttt_acc"], 0.0]
-    v_self_sub = [fh["Qwen2.5-7B"]["self_rewriting_repair_acc"], fh["Qwen3-8B"]["self_rewriting_repair_acc"], 70.2]
-    v_cal_surg = [fh["Qwen2.5-7B"]["calibrated_row_surgery_acc"], fh["Qwen3-8B"]["calibrated_row_surgery_acc"], 70.2]
-
+    # Panel (b): Strictly Disaggregated Attribution (Local 7B/8B 5-Method Suite vs. Published 27B 3-Bar Reference)
+    labels = ["Qwen2.5-7B\n(Local Math)", "Qwen3-8B\n(Local Math)", "Qwen3.5-27B\n(6-Vision [Ref])"]
     x = np.arange(len(labels))
     w = 0.16
-    ax2.bar(x - 2 * w, v_clean, width=w, color="#CBD5E1", edgecolor="black", lw=0.65, label="Pristine Base")
-    ax2.bar(x - w, v_corr, width=w, color=C_RED, edgecolor="black", lw=0.65, label="Damaged (8-Row 1397x)")
-    ax2.bar(x, v_ttt, width=w, color=C_AMBER, edgecolor="black", lw=0.65, label="Few-Shot LoRA-TTT (0%)")
-    ax2.bar(x + w, v_self_sub, width=w, color=C_PURP, edgecolor="black", lw=0.65, label="Autonomic Self-Repair")
-    b_surg = ax2.bar(x + 2 * w, v_cal_surg, width=w, color=C_GREEN, edgecolor="black", lw=0.75, label="Calibrated Row Surgery")
 
-    recs = [
-        f"{fh['Qwen2.5-7B']['calibrated_recovery_pct']:.0f}% Rec",
-        f"{fh['Qwen3-8B']['calibrated_recovery_pct']:.0f}% Rec",
-        "83% Rec",
-    ]
-    for bar, rtxt in zip(b_surg, recs):
+    # Local 7B & 8B (indices 0, 1)
+    x_loc = np.array([0.0, 1.0])
+    v_clean_loc = [fh["Qwen2.5-7B"]["clean_acc"], fh["Qwen3-8B"]["clean_acc"]]
+    v_corr_loc = [fh["Qwen2.5-7B"]["corrupted_acc"], fh["Qwen3-8B"]["corrupted_acc"]]
+    v_ttt_loc = [fh["Qwen2.5-7B"]["naive_ttt_acc"], fh["Qwen3-8B"]["naive_ttt_acc"]]
+    v_ed_loc = [fh["Qwen2.5-7B"]["self_rewriting_repair_acc"], fh["Qwen3-8B"]["self_rewriting_repair_acc"]]
+    v_surg_loc = [fh["Qwen2.5-7B"]["calibrated_row_surgery_acc"], fh["Qwen3-8B"]["calibrated_row_surgery_acc"]]
+
+    ax2.bar(x_loc - 2 * w, v_clean_loc, width=w, color="#CBD5E1", edgecolor="black", lw=0.65, label="Pristine Base")
+    ax2.bar(x_loc - w, v_corr_loc, width=w, color=C_RED, edgecolor="black", lw=0.65, label="Corrupted Checkpoint")
+    ax2.bar(x_loc, v_ttt_loc, width=w, color=C_AMBER, edgecolor="black", lw=0.65, label="Few-Shot LoRA-TTT (0%)")
+    ax2.bar(x_loc + w, v_ed_loc, width=w, color=C_PURP, edgecolor="black", lw=0.65, label="Editor-Authored (No W0)")
+    b_surg = ax2.bar(x_loc + 2 * w, v_surg_loc, width=w, color=C_GREEN, edgecolor="black", lw=0.75, label="50x Row-Zeroing (Local)")
+
+    for bar, rtxt in zip(b_surg, [f"{fh['Qwen2.5-7B']['calibrated_recovery_pct']:.0f}% Rec", f"{fh['Qwen3-8B']['calibrated_recovery_pct']:.0f}% Rec"]):
         h = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width() / 2, h + 1.5, rtxt, ha="center", va="bottom", fontsize=7.1, fontweight="bold", color=C_GREEN)
+        ax2.text(bar.get_x() + bar.get_width() / 2, h + 1.5, rtxt, ha="center", va="bottom", fontsize=7.0, fontweight="bold", color=C_GREEN)
+
+    # Published 27B Reference (index 2: ONLY the 3 evaluated quantities from Fan et al. [Ref])
+    ax2.axvline(1.52, color=C_GRAY, ls=":", lw=1.1)
+    x27 = 2.0
+    ax2.bar([x27 - 1.2 * w], [84.6], width=w, color="#CBD5E1", edgecolor="black", lw=0.65)
+    ax2.bar([x27], [7.3], width=w, color=C_RED, edgecolor="black", lw=0.65)
+    b_27_ed = ax2.bar([x27 + 1.2 * w], [70.2], width=w, color=C_PURP, edgecolor="black", lw=0.75)
+    ax2.text(x27 + 1.2 * w, 70.2 + 1.5, "83% Rec\n(15x Clip)", ha="center", va="bottom", fontsize=6.8, fontweight="bold", color=C_PURP)
 
     ax2.set_xticks(x)
     ax2.set_xticklabels(labels, fontsize=8.2, fontweight="bold")
     ax2.set_ylabel("Unseen Task Accuracy (%)", fontsize=9.0, fontweight="bold")
-    ax2.set_ylim(0, 102)
-    ax2.set_title("(b) Zero-Backup Fault Recovery: LoRA-TTT vs. Row Surgery", fontsize=9.6, fontweight="bold", pad=10)
-    ax2.legend(loc="upper left", fontsize=7.2, ncol=2, frameon=True, facecolor="white")
+    ax2.set_ylim(0, 105)
+    ax2.set_title("(b) Reference-Free Fault Repair Across Protocols", fontsize=9.5, fontweight="bold", pad=10)
+    ax2.legend(loc="upper left", fontsize=6.9, ncol=2, frameon=True, facecolor="white")
     ax2.grid(axis="y", ls="--", alpha=0.35)
 
     fig.tight_layout(pad=0.8)
@@ -174,39 +180,46 @@ def plot_fig7_unblocking_vs_acquisition(data: dict) -> None:
     methods = [
         "Frozen\nBase",
         "Zero-Grad\nSurgery",
-        "1-Round\nLoRA-TTT",
+        "1-Rd\nLoRA-TTT",
+        "Zero-Grad\n(8-Rd)",
         "AlphaEdit\n(8-Rd)",
         "Naive TTT\n(8-Rd)",
         "HWGM\n(0-Tok)",
         "HWGM +\nCLS-RAG",
     ]
-    unseen_api_acc = [
-        uva["frozen_base"],
-        uva["zero_grad_directional_surgery"],
-        uva["associative_lowrank_ttt"],
-        32.9,
-        35.3,
-        81.5,
-        99.5,
-    ]
-    v2_migration_acc = [0.0, 0.0, 0.0, 0.0, 0.0, 66.7, 100.0]
 
-    x = np.arange(len(methods))
-    w = 0.35
-    b1 = ax1.bar(x - w / 2, unseen_api_acc, width=w, color=C_BLUE, edgecolor="black", lw=0.7, label="Unseen Private API Acc (0-Tok %)")
-    b2 = ax1.bar(x + w / 2, v2_migration_acc, width=w, color=C_GREEN, edgecolor="black", lw=0.7, label="Breaking v1->v2 Migration Acc (%)")
+    # Left regime (indices 0..2): 1-Shot Strictly Unseen Private APIs (single bar per method)
+    x_left = np.array([0.0, 1.0, 2.0])
+    v_left = [uva["frozen_base"], uva["zero_grad_directional_surgery"], uva["associative_lowrank_ttt"]]
+    b_left = ax1.bar(x_left, v_left, width=0.42, color="#4F81BD", edgecolor="black", lw=0.7, label="1-Shot Unseen Private API (0-Tok %)")
+    for bar in b_left:
+        h = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width() / 2, h + 1.4, f"{h:.0f}", ha="center", va="bottom", fontsize=6.9, fontweight="bold")
 
-    for b in (b1, b2):
+    # Right regime (indices 3..7): 8-Round Non-Stationary HomeoToolBench (paired AvgAcc & v1->v2 Acc)
+    ax1.axvline(2.52, color=C_GRAY, ls="--", lw=1.15)
+    x_right = np.array([3.0, 4.0, 5.0, 6.0, 7.0])
+    w = 0.34
+    tool_avg = [2.5, 32.9, 35.3, 81.5, 99.5]
+    v2_mig = [0.0, 0.0, 0.0, 66.7, 100.0]
+    b_r1 = ax1.bar(x_right - w / 2, tool_avg, width=w, color=C_BLUE, edgecolor="black", lw=0.7, label="8-Rd HomeoToolBench AvgAcc (%)")
+    b_r2 = ax1.bar(x_right + w / 2, v2_mig, width=w, color=C_GREEN, edgecolor="black", lw=0.7, label="8-Rd v1->v2 Migration Acc (%)")
+
+    for b in (b_r1, b_r2):
         for bar in b:
             h = bar.get_height()
-            ax1.text(bar.get_x() + bar.get_width() / 2, h + 1.4, f"{h:.0f}", ha="center", va="bottom", fontsize=6.9, fontweight="bold")
+            lbl_s = f"{h:.1f}" if (0 < h < 5) else f"{h:.0f}"
+            ax1.text(bar.get_x() + bar.get_width() / 2, h + 1.4, lbl_s, ha="center", va="bottom", fontsize=6.5, fontweight="bold")
 
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(methods, fontsize=7.5, fontweight="bold")
-    ax1.set_ylabel("Zero-Context Accuracy (%)", fontsize=9.0, fontweight="bold")
-    ax1.set_ylim(0, 114)
-    ax1.set_title("(a) Zero-Grad Surgery (0% New API) vs. Associative Plasticity", fontsize=9.5, fontweight="bold", pad=10)
-    ax1.legend(loc="upper left", fontsize=7.4, frameon=True, facecolor="white")
+    ax1.text(1.0, 117, "1-Shot Private API", ha="center", va="top", fontsize=7.2, fontweight="bold", color="#334155")
+    ax1.text(4.85, 117, "8-Round HomeoToolBench (Table 6)", ha="center", va="top", fontsize=7.2, fontweight="bold", color="#334155")
+
+    ax1.set_xticks(np.arange(len(methods)))
+    ax1.set_xticklabels(methods, fontsize=6.9, fontweight="bold")
+    ax1.set_ylabel("Accuracy (%)", fontsize=9.0, fontweight="bold")
+    ax1.set_ylim(0, 123)
+    ax1.set_title("(a) Zero-Grad Surgery vs. Associative Compilation", fontsize=9.5, fontweight="bold", pad=10)
+    ax1.legend(loc="upper left", bbox_to_anchor=(0.0, 0.89), fontsize=6.7, frameon=True, facecolor="white")
     ax1.grid(axis="y", ls="--", alpha=0.35)
 
     # Panel (b): Exact Logged 8-Round post_sigma_max Trajectories (runs/exp1 & runs/exp6)

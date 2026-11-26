@@ -33,45 +33,70 @@ C_GRAY = "#64748B"
 
 
 def plot_fig5_scale_emergence(data: dict) -> None:
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.0))
+    from matplotlib.patches import Patch
 
-    # Panel (a): 100% Verified Scale Emergence Outcomes across Qwen3.5-{2B, 4B, 9B, 27B}
-    # (Live GB10 sandbox logs for 2B/4B/9B + published Qwen3.5-27B numbers from Fan et al., arXiv:2611.21885)
-    scales = ["Qwen3.5-2B", "Qwen3.5-4B", "Qwen3.5-9B", "Qwen3.5-27B"]
-    post_compile_acc = [0.0, 0.0, 0.0, 63.8]
-    ref_27b_base = 57.2
-    status_tags = [
-        "0 Commits\n(3D Index Err /\nDenies Weights)",
-        "Self-Bricks\n(0.0% Acc,\nFloat Slice Err)",
-        "Self-Bricks\n(0.0% Acc,\n110.85x Norm)",
-        "+6.6% Unseen\n(57.2% -> 63.8%,\n3/8 Commits)",
-    ]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.6, 4.15))
 
+    # Panel (a): Paired Base vs. Post-Edit Accuracy across Qwen3.5-{2B, 4B, 9B, 27B}
+    # Ground-truth numbers from Fan et al. (arXiv:2611.21885, Table 2 & Fig. 43) + local sandbox autopsy
+    scales = ["Qwen3.5-2B", "Qwen3.5-4B*", "Qwen3.5-9B", "Qwen3.5-27B"]
+    base_accs = [9.0, 44.1, 47.5, 57.2]
     x = np.arange(len(scales))
-    w = 0.36
-    # Show published 27B frozen baseline next to 27B post-compilation, and post-attempt outcome across all 4 scales
-    ax1.bar([3 - w / 2], [ref_27b_base], width=w, color="#CBD5E1", edgecolor="black", lw=0.75, label="Frozen Base (Published 27B: 57.2%)")
-    ax1.text(3 - w / 2, ref_27b_base + 1.4, "57.2%", ha="center", va="bottom", fontsize=7.4, color=C_GRAY, fontweight="bold")
+    w = 0.34
 
-    bar_x = [0.0, 1.0, 2.0, 3 + w / 2]
-    bar_colors = ["#94A3B8", C_RED, C_RED, C_GREEN]
-    b2 = ax1.bar(bar_x, post_compile_acc, width=w, color=bar_colors, edgecolor="black", lw=0.75, label="Unguarded Post-Compilation Acc (%)")
+    # 1. Base accuracy bars across all 4 scales
+    ax1.bar(x - w / 2, base_accs, width=w, color="#CBD5E1", edgecolor="#1E293B", lw=0.8)
+    for bx, bh in zip(x - w / 2, base_accs):
+        ax1.text(bx, bh + 1.1, f"{bh:.1f}%", ha="center", va="bottom", fontsize=7.1, color="#334155", fontweight="bold")
 
-    for idx, (bx, h, tag) in enumerate(zip(bar_x, post_compile_acc, status_tags)):
-        tc = C_GREEN if idx == 3 else (C_RED if idx in (1, 2) else C_BLUE)
-        y_pos = h + 1.8 if h > 0 else 3.5
+    # 2a. 2B: No edit submitted -> unchanged at 9.0% (hatched)
+    ax1.bar([0 + w / 2], [9.0], width=w, facecolor="#E2E8F0", edgecolor="#475569", hatch="///", lw=0.8)
+    ax1.text(0 + w / 2, 9.0 + 1.1, "9.0%", ha="center", va="bottom", fontsize=7.1, color="#475569", fontweight="bold")
+    ax1.text(
+        0.0, 16.5, "No Edit\n(Denies Weights /\n3D Index Err)",
+        ha="center", va="bottom", fontsize=6.7, color=C_BLUE, fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#CBD5E1", lw=0.5, alpha=0.94),
+    )
+
+    # 2b. 4B & 9B: Self-bricked to 0.0% -> show dashed drop envelope + downward arrow + 0.0% floor bar
+    for idx, b_acc, tag in [
+        (1, 44.1, "Self-Bricks -> 0%\n(-44.1% Session*;\nWithdrawn)"),
+        (2, 47.5, "Self-Bricks -> 0%\n(-47.5% Held-Out;\n110.85x Norm)"),
+    ]:
+        rx = idx + w / 2
+        ax1.bar([rx], [b_acc], width=w, facecolor="#FEE2E2", edgecolor=C_RED, ls="--", lw=0.95, alpha=0.55)
+        ax1.bar([rx], [1.3], width=w, facecolor=C_RED, edgecolor="#7F1D1D", lw=0.7)
+        ax1.annotate(
+            "", xy=(rx, 5.6), xytext=(rx, b_acc - 2.6),
+            arrowprops=dict(arrowstyle="-|>,head_width=0.24,head_length=0.34", color=C_RED, lw=1.45),
+        )
+        ax1.text(rx, 1.9, "0.0%", ha="center", va="bottom", fontsize=6.6, color="#7F1D1D", fontweight="bold")
         ax1.text(
-            bx, y_pos, tag,
-            ha="center", va="bottom", fontsize=6.8, color=tc, fontweight="bold",
-            bbox=dict(boxstyle="round,pad=0.16", facecolor="white", edgecolor="none", alpha=0.90),
+            idx, b_acc + 5.6, tag,
+            ha="center", va="bottom", fontsize=6.6, color=C_RED, fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#FECACA", lw=0.5, alpha=0.94),
         )
 
+    # 2c. 27B: Verified self-compiled improvement 57.2% -> 63.8% (+6.6%)
+    ax1.bar([3 + w / 2], [63.8], width=w, color=C_GREEN, edgecolor="#1E293B", lw=0.8)
+    ax1.text(
+        3 + w / 2 - 0.04, 65.0, "+6.6% Unseen\n(63.8%, 3/8 Sub.)",
+        ha="center", va="bottom", fontsize=6.9, color=C_GREEN, fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#A7F3D0", lw=0.5, alpha=0.94),
+    )
+
+    legend_handles = [
+        Patch(facecolor="#CBD5E1", edgecolor="#1E293B", lw=0.8, label="Frozen Base Acc (%)"),
+        Patch(facecolor="#E2E8F0", edgecolor="#475569", hatch="///", lw=0.8, label="No Edit Submitted (2B)"),
+        Patch(facecolor="#FEE2E2", edgecolor=C_RED, ls="--", lw=0.95, label="Self-Bricked -> 0.0% (4B, 9B)"),
+        Patch(facecolor=C_GREEN, edgecolor="#1E293B", lw=0.8, label="Verified Self-Edit (27B)"),
+    ]
     ax1.set_xticks(x)
-    ax1.set_xticklabels(scales, fontsize=8.5, fontweight="bold")
-    ax1.set_ylabel("Post-Compilation Unseen Acc (%)", fontsize=9.0, fontweight="bold")
-    ax1.set_ylim(0, 84)
+    ax1.set_xticklabels(scales, fontsize=8.4, fontweight="bold")
+    ax1.set_ylabel("Math Benchmark Accuracy (%)", fontsize=9.0, fontweight="bold")
+    ax1.set_ylim(0, 88)
     ax1.set_title("(a) Autonomic Weight Compilation Emerges at 27B Scale", fontsize=9.5, fontweight="bold", pad=10)
-    ax1.legend(loc="upper left", fontsize=7.4, frameon=True, facecolor="white")
+    ax1.legend(handles=legend_handles, loc="upper left", ncol=2, fontsize=6.8, frameon=True, facecolor="white", columnspacing=0.9, handletextpad=0.5)
     ax1.grid(axis="y", ls="--", alpha=0.35)
 
     # Panel (b): Exact Logged runs/exp5_sculptor_scaling/all_results.json

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Generate Empirical Benchmark Figures (Figs 5-8) from final_survey_benchmark.json + verified multi-round runs."""
+"""
+Generate all four Empirical Benchmark Figures (Figs 7-10 in PDF: fig5..fig8.pdf)
+strictly from `results/clean_survey_benchmark.json` (100% self-contained published adaptation baselines).
+"""
 
 from __future__ import annotations
 
@@ -11,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 BENCH_ROOT = Path(__file__).resolve().parent
-RESULTS_PATH = BENCH_ROOT / "results" / "final_survey_benchmark.json"
+RESULTS_PATH = BENCH_ROOT / "results" / "clean_survey_benchmark.json"
 FIG_DIR = BENCH_ROOT / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -30,298 +33,446 @@ C_AMBER = "#D97706"
 C_RED = "#C53030"
 C_PURP = "#6B46C1"
 C_GRAY = "#64748B"
+C_SLATE = "#CBD5E1"
 
 
 def plot_fig5_scale_emergence(data: dict) -> None:
-    from matplotlib.patches import Patch
+    law1 = data["law1_scale_and_cross_compile"]
+    endo = law1["endogenous"]
+    exo = law1["exogenous_27b_compiler"]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.6, 4.15))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.15))
 
-    # Panel (a): Paired Base vs. Post-Edit Accuracy across Qwen3.5-{2B, 4B, 9B, 27B}
-    # Ground-truth numbers from Fan et al. (arXiv:2611.21885, Table 2 & Fig. 43) + local sandbox autopsy
-    scales = ["Qwen3.5-2B", "Qwen3.5-4B*", "Qwen3.5-9B", "Qwen3.5-27B"]
-    base_accs = [9.0, 44.1, 47.5, 57.2]
+    # Panel (a): Unified Endogenous REPL Patching across Qwen3.5-{2B, 4B, 9B, 27B} (N=20, 196-tok budget)
+    scales = ["2B", "4B", "9B", "27B"]
+    xlabels = [f"Qwen3.5-{s}" for s in scales]
+    base_accs = [endo[s]["base_eval"]["accuracy"] for s in scales]
+    unguarded_accs = [endo[s]["worst_unguarded_eval_acc"] for s in scales]
+    gated_accs = [endo[s]["final_gated_eval"]["accuracy"] for s in scales]
+    commits = [endo[s]["commits"] for s in scales]
+
     x = np.arange(len(scales))
-    w = 0.34
+    w = 0.25
 
-    # 1. Base accuracy bars across all 4 scales
-    ax1.bar(x - w / 2, base_accs, width=w, color="#CBD5E1", edgecolor="#1E293B", lw=0.8)
-    for bx, bh in zip(x - w / 2, base_accs):
-        ax1.text(bx, bh + 1.1, f"{bh:.1f}%", ha="center", va="bottom", fontsize=7.1, color="#334155", fontweight="bold")
+    b1 = ax1.bar(x - w, base_accs, width=w, color=C_SLATE, edgecolor="#1E293B", lw=0.75, label="Frozen Base (W0)")
+    b2 = ax1.bar(x, unguarded_accs, width=w, color="#FCA5A5", edgecolor=C_RED, lw=0.75, label="Worst Unguarded Patch")
+    b3 = ax1.bar(x + w, gated_accs, width=w, color=C_GREEN, edgecolor="#1E293B", lw=0.75, label="Practice-Gated Commit")
 
-    # 2a. 2B: No edit submitted -> unchanged at 9.0% (hatched)
-    ax1.bar([0 + w / 2], [9.0], width=w, facecolor="#E2E8F0", edgecolor="#475569", hatch="///", lw=0.8)
-    ax1.text(0 + w / 2, 9.0 + 1.1, "9.0%", ha="center", va="bottom", fontsize=7.1, color="#475569", fontweight="bold")
-    ax1.text(
-        0.0, 16.5, "No Edit\n(Denies Weights /\n3D Index Err)",
-        ha="center", va="bottom", fontsize=6.7, color=C_BLUE, fontweight="bold",
-        bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#CBD5E1", lw=0.5, alpha=0.94),
-    )
+    for bars, col in [(b1, "#334155"), (b2, C_RED), (b3, C_GREEN)]:
+        for bar in bars:
+            h = bar.get_height()
+            ax1.text(
+                bar.get_x() + bar.get_width() / 2,
+                h + 1.2,
+                f"{h:.0f}%",
+                ha="center",
+                va="bottom",
+                fontsize=6.8,
+                fontweight="bold",
+                color=col,
+            )
 
-    # 2b. 4B & 9B: Self-bricked to 0.0% -> show dashed drop envelope + downward arrow + 0.0% floor bar
-    for idx, b_acc, tag in [
-        (1, 44.1, "Self-Bricks -> 0%\n(-44.1% Session*;\nWithdrawn)"),
-        (2, 47.5, "Self-Bricks -> 0%\n(-47.5% Held-Out;\n110.85x Norm)"),
-    ]:
-        rx = idx + w / 2
-        ax1.bar([rx], [b_acc], width=w, facecolor="#FEE2E2", edgecolor=C_RED, ls="--", lw=0.95, alpha=0.55)
-        ax1.bar([rx], [1.3], width=w, facecolor=C_RED, edgecolor="#7F1D1D", lw=0.7)
-        ax1.annotate(
-            "", xy=(rx, 5.6), xytext=(rx, b_acc - 2.6),
-            arrowprops=dict(arrowstyle="-|>,head_width=0.24,head_length=0.34", color=C_RED, lw=1.45),
-        )
-        ax1.text(rx, 1.9, "0.0%", ha="center", va="bottom", fontsize=6.6, color="#7F1D1D", fontweight="bold")
+    for idx, s in enumerate(scales):
+        delta = gated_accs[idx] - base_accs[idx]
+        c_cnt = commits[idx]
+        if c_cnt > 0 and delta > 0:
+            tag = f"+{delta:.0f}% ({c_cnt}/4 Commits)"
+            tcol, ecol = C_GREEN, "#A7F3D0"
+        elif c_cnt > 0 and delta < 0:
+            tag = f"{delta:.0f}% Practice Overfit\n({c_cnt}/4 Commits)"
+            tcol, ecol = C_RED, "#FECACA"
+        else:
+            tag = f"{c_cnt}/4 Commits\n(Shape / Index Err)"
+            tcol, ecol = C_BLUE, "#CBD5E1"
+        top_y = max(base_accs[idx], unguarded_accs[idx], gated_accs[idx]) + 7.8
         ax1.text(
-            idx, b_acc + 5.6, tag,
-            ha="center", va="bottom", fontsize=6.6, color=C_RED, fontweight="bold",
-            bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#FECACA", lw=0.5, alpha=0.94),
+            idx,
+            min(top_y, 93.0),
+            tag,
+            ha="center",
+            va="bottom",
+            fontsize=6.5,
+            fontweight="bold",
+            color=tcol,
+            bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor=ecol, lw=0.6, alpha=0.95),
         )
 
-    # 2c. 27B: Verified self-compiled improvement 57.2% -> 63.8% (+6.6%)
-    ax1.bar([3 + w / 2], [63.8], width=w, color=C_GREEN, edgecolor="#1E293B", lw=0.8)
-    ax1.text(
-        3 + w / 2 - 0.04, 65.0, "+6.6% Unseen\n(63.8%, 3/8 Sub.)",
-        ha="center", va="bottom", fontsize=6.9, color=C_GREEN, fontweight="bold",
-        bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#A7F3D0", lw=0.5, alpha=0.94),
-    )
-
-    legend_handles = [
-        Patch(facecolor="#CBD5E1", edgecolor="#1E293B", lw=0.8, label="Frozen Base Acc (%)"),
-        Patch(facecolor="#E2E8F0", edgecolor="#475569", hatch="///", lw=0.8, label="No Edit Submitted (2B)"),
-        Patch(facecolor="#FEE2E2", edgecolor=C_RED, ls="--", lw=0.95, label="Self-Bricked -> 0.0% (4B, 9B)"),
-        Patch(facecolor=C_GREEN, edgecolor="#1E293B", lw=0.8, label="Verified Self-Edit (27B)"),
-    ]
     ax1.set_xticks(x)
-    ax1.set_xticklabels(scales, fontsize=8.4, fontweight="bold")
-    ax1.set_ylabel("Math Benchmark Accuracy (%)", fontsize=9.0, fontweight="bold")
-    ax1.set_ylim(0, 88)
-    ax1.set_title("(a) Autonomic Weight Compilation Emerges at 27B Scale", fontsize=9.5, fontweight="bold", pad=10)
-    ax1.legend(handles=legend_handles, loc="upper left", ncol=2, fontsize=6.8, frameon=True, facecolor="white", columnspacing=0.9, handletextpad=0.5)
+    ax1.set_xticklabels(xlabels, fontsize=8.3, fontweight="bold")
+    ax1.set_ylabel("Held-Out Math Accuracy (%, N=20)", fontsize=8.8, fontweight="bold")
+    ax1.set_ylim(0, 112)
+    ax1.set_title("(a) Endogenous Self-Patching Across Qwen3.5 Scales", fontsize=9.4, fontweight="bold", pad=10)
+    ax1.legend(loc="upper left", fontsize=7.0, frameon=True, facecolor="white")
     ax1.grid(axis="y", ls="--", alpha=0.35)
 
-    # Panel (b): Exact Logged runs/exp5_sculptor_scaling/all_results.json
-    exp5 = data["exact_exp5_decoupled_scaling"]
-    configs = [
-        "1.5B\nSelf-Sculpt",
-        "1.5B +\n7B Local",
-        "1.5B +\n9B Local",
-        "1.5B + Flash\n1KB Cloud",
-        "1.5B + Pro\n1KB Cloud",
-    ]
-    avg_accs = exp5["avg_acc_pct"]
-    trap_rates = exp5["avg_trap_pct"]
+    # Panel (b): Exogenous Cross-Compilation (Qwen3.5-27B Compiler -> {2B, 4B, 9B} Targets)
+    sub_scales = ["2B", "4B", "9B"]
+    xb = np.arange(len(sub_scales))
+    wb = 0.25
+    sub_base = [endo[s]["base_eval"]["accuracy"] for s in sub_scales]
+    sub_self_ung = [endo[s]["worst_unguarded_eval_acc"] for s in sub_scales]
+    sub_exo = [exo[s]["post_cross_compile_eval"]["accuracy"] for s in sub_scales]
 
-    xb = np.arange(len(configs))
-    cols_b = ["#FCA5A5", C_BLUE, C_BLUE, C_GREEN, C_GREEN]
-    bars_b = ax2.bar(xb, avg_accs, width=0.52, color=cols_b, edgecolor="black", lw=0.75, label="8-Round Mean Accuracy (%)")
-    for bar, tr in zip(bars_b, trap_rates):
-        h = bar.get_height()
-        lbl = f"{h:.1f}%\n(Trap {tr:.1f}%)" if tr > 0 else f"{h:.1f}%\n(0% Trap)"
-        ax2.text(bar.get_x() + bar.get_width() / 2, h + 1.2, lbl, ha="center", va="bottom", fontsize=7.2, fontweight="bold")
+    eb1 = ax2.bar(xb - wb, sub_base, width=wb, color=C_SLATE, edgecolor="#1E293B", lw=0.75, label="Frozen Student Base")
+    eb2 = ax2.bar(xb, sub_self_ung, width=wb, color="#FCA5A5", edgecolor=C_RED, lw=0.75, label="Endogenous Unguarded")
+    eb3 = ax2.bar(xb + wb, sub_exo, width=wb, color=C_BLUE, edgecolor="#1E293B", lw=0.75, label="27B Cross-Compiled (EWSM)")
+
+    for bars, col in [(eb1, "#334155"), (eb2, C_RED), (eb3, C_BLUE)]:
+        for bar in bars:
+            h = bar.get_height()
+            ax2.text(
+                bar.get_x() + bar.get_width() / 2,
+                h + 1.2,
+                f"{h:.0f}%",
+                ha="center",
+                va="bottom",
+                fontsize=7.0,
+                fontweight="bold",
+                color=col,
+            )
+
+    # Highlight 4B 4.0x rescue
+    ax2.text(
+        1.0 + wb,
+        sub_exo[1] + 8.0,
+        "+30% (4.0x)",
+        ha="center",
+        va="bottom",
+        fontsize=6.8,
+        fontweight="bold",
+        color=C_BLUE,
+        bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="#93C5FD", lw=0.65, alpha=0.95),
+    )
 
     ax2.set_xticks(xb)
-    ax2.set_xticklabels(configs, fontsize=8.0, fontweight="bold")
-    ax2.set_ylabel("8-Round Adaptation AvgAcc (%)", fontsize=9.0, fontweight="bold")
-    ax2.set_ylim(0, 58)
-    ax2.set_title("(b) Decoupled 1KB IR Auditing Rescues 1.5B Edge Models", fontsize=9.5, fontweight="bold", pad=10)
+    ax2.set_xticklabels([f"Qwen3.5-{s}\nTarget" for s in sub_scales], fontsize=8.3, fontweight="bold")
+    ax2.set_ylabel("Held-Out Math Accuracy (%, N=20)", fontsize=8.8, fontweight="bold")
+    ax2.set_ylim(0, 112)
+    ax2.set_title("(b) Exogenous 27B Cross-Compilation Transfers to Sub-10B", fontsize=9.4, fontweight="bold", pad=10)
+    ax2.legend(loc="upper left", fontsize=7.0, frameon=True, facecolor="white")
     ax2.grid(axis="y", ls="--", alpha=0.35)
 
-    fig.tight_layout(pad=0.8)
+    fig.tight_layout(pad=0.85)
     fig.savefig(FIG_DIR / "fig5_scale_emergence.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
 def plot_fig6_fault_self_healing(data: dict) -> None:
-    fh = data["sdpa_fault_self_healing"]
-    models = ["Qwen2-1.5B", "Qwen2.5-7B", "Qwen3-8B"]
+    fh = data["law2_fault_repair"]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.15))
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.0))
+    # Panel (a): Live 64-Layer Reference-Free Row-RMS Scan on Qwen3.5-27B (Layer 30 200*sigma fault)
+    m27 = fh["Qwen3.5-27B"]
+    n_layers = m27["num_layers"]
+    c_layer = m27["corrupted_layer"]
+    peak_r = m27["peak_row_rms_ratio"]
+    ratios = np.array(m27["layer_row_rms_ratios"], dtype=float)
 
-    # Panel (a): Exact Reference-Free Row-RMS Scan on Qwen3-8B safetensors (36 layers, Layer 19 = 1397.0x)
-    n_layers = fh["Qwen3-8B"]["num_layers"]
-    c_layer = fh["Qwen3-8B"]["corrupted_layer"]
-    peak_r = fh["Qwen3-8B"]["outlier_ratio"]
-    ratios = np.array(fh["Qwen3-8B"]["exact_36_layer_damaged_row_rms_ratios"], dtype=float)
-
-    ax1.plot(np.arange(n_layers), ratios, color=C_BLUE, lw=1.7, marker="o", markersize=3.6, label="Layer Max / Median Row-RMS")
-    ax1.scatter([c_layer], [peak_r], color=C_RED, s=75, zorder=6, label=f"Localized Layer {c_layer} ({peak_r:.1f}x Outlier)")
-    ax1.axhline(50.0, color=C_RED, ls="--", lw=1.1, label="Outlier Gate Threshold (50x)")
+    ax1.plot(np.arange(n_layers), ratios, color=C_BLUE, lw=1.6, marker="o", markersize=3.0, label="Layer Max / Median Row-RMS")
+    ax1.scatter([c_layer], [peak_r], color=C_RED, s=75, zorder=6, label=f"Pinpointed Layer {c_layer} ({peak_r:.1f}x Outlier)")
+    ax1.axhline(50.0, color=C_RED, ls="--", lw=1.1, label="Row-Zeroing Gate (50x Median)")
     ax1.set_yscale("log")
-    ax1.set_xlabel("Decoder Layer Index (Qwen3-8B, 36 Layers)", fontsize=9.0, fontweight="bold")
-    ax1.set_ylabel("Row-RMS Outlier Ratio (log scale)", fontsize=9.0, fontweight="bold")
-    ax1.set_ylim(0.8, peak_r * 4.5)
-    ax1.set_title("(a) Reference-Free Tensor Scan Pinpoints Damaged Layer", fontsize=9.5, fontweight="bold", pad=10)
-    ax1.legend(loc="upper right", fontsize=7.5, frameon=True, facecolor="white")
+    ax1.set_xlabel(f"Decoder Layer Index (Qwen3.5-27B, {n_layers} Layers)", fontsize=8.8, fontweight="bold")
+    ax1.set_ylabel("Row-RMS Outlier Ratio (log scale)", fontsize=8.8, fontweight="bold")
+    ax1.set_ylim(0.8, peak_r * 5.0)
+    ax1.set_title("(a) Reference-Free Scan Pinpoints Layer 30 on Qwen3.5-27B", fontsize=9.4, fontweight="bold", pad=10)
+    ax1.legend(loc="upper right", fontsize=7.2, frameon=True, facecolor="white")
     ax1.grid(True, which="both", ls="--", alpha=0.3)
 
-    # Panel (b): Strictly Disaggregated Attribution (Local 7B/8B 5-Method Suite vs. Published 27B 3-Bar Reference)
-    labels = ["Qwen2.5-7B\n(Local Math)", "Qwen3-8B\n(Local Math)", "Qwen3.5-27B\n(6-Vision [Ref])"]
-    x = np.arange(len(labels))
-    w = 0.16
+    # Panel (b): Unified 4-Scale Comparison under 8-Row 200-sigma Corruption (N=20)
+    order = [
+        ("Qwen2.5-1.5B-Instruct", "Qwen2.5-1.5B"),
+        ("Qwen2.5-7B-Instruct", "Qwen2.5-7B"),
+        ("Qwen3-8B", "Qwen3-8B"),
+        ("Qwen3.5-27B", "Qwen3.5-27B"),
+    ]
+    x = np.arange(len(order))
+    w = 0.15
 
-    # Local 7B & 8B (indices 0, 1)
-    x_loc = np.array([0.0, 1.0])
-    v_clean_loc = [fh["Qwen2.5-7B"]["clean_acc"], fh["Qwen3-8B"]["clean_acc"]]
-    v_corr_loc = [fh["Qwen2.5-7B"]["corrupted_acc"], fh["Qwen3-8B"]["corrupted_acc"]]
-    v_ttt_loc = [fh["Qwen2.5-7B"]["naive_ttt_acc"], fh["Qwen3-8B"]["naive_ttt_acc"]]
-    v_ed_loc = [fh["Qwen2.5-7B"]["self_rewriting_repair_acc"], fh["Qwen3-8B"]["self_rewriting_repair_acc"]]
-    v_surg_loc = [fh["Qwen2.5-7B"]["calibrated_row_surgery_acc"], fh["Qwen3-8B"]["calibrated_row_surgery_acc"]]
+    v_clean = [fh[k]["clean_acc"] for k, _ in order]
+    v_ttt = [fh[k]["lora_ttt_acc"] for k, _ in order]
+    v_glob = [fh[k]["global_rescale_acc"] for k, _ in order]
+    v_edit = [fh[k]["editor_authored_acc"] for k, _ in order]
+    v_row50 = [fh[k]["row50x_zeroing_acc"] for k, _ in order]
 
-    ax2.bar(x_loc - 2 * w, v_clean_loc, width=w, color="#CBD5E1", edgecolor="black", lw=0.65, label="Pristine Base")
-    ax2.bar(x_loc - w, v_corr_loc, width=w, color=C_RED, edgecolor="black", lw=0.65, label="Corrupted Checkpoint")
-    ax2.bar(x_loc, v_ttt_loc, width=w, color=C_AMBER, edgecolor="black", lw=0.65, label="Few-Shot LoRA-TTT (0%)")
-    ax2.bar(x_loc + w, v_ed_loc, width=w, color=C_PURP, edgecolor="black", lw=0.65, label="Editor-Authored (No W0)")
-    b_surg = ax2.bar(x_loc + 2 * w, v_surg_loc, width=w, color=C_GREEN, edgecolor="black", lw=0.75, label="50x Row-Zeroing (Local)")
+    ax2.bar(x - 2 * w, v_clean, width=w, color=C_SLATE, edgecolor="black", lw=0.65, label="Pristine Clean")
+    ax2.bar(x - w, v_ttt, width=w, color=C_RED, edgecolor="black", lw=0.65, label="Few-Shot LoRA-TTT (0%)")
+    ax2.bar(x, v_glob, width=w, color=C_AMBER, edgecolor="black", lw=0.65, label="Global Norm Rescale")
+    ax2.bar(x + w, v_edit, width=w, color=C_PURP, edgecolor="black", lw=0.65, label="Editor-Authored (No W0)")
+    ax2.bar(x + 2 * w, v_row50, width=w, color=C_GREEN, edgecolor="black", lw=0.75, label="50x Row-RMS Zeroing")
 
-    for bar, rtxt in zip(b_surg, [f"{fh['Qwen2.5-7B']['calibrated_recovery_pct']:.0f}% Rec", f"{fh['Qwen3-8B']['calibrated_recovery_pct']:.0f}% Rec"]):
-        h = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width() / 2, h + 1.5, rtxt, ha="center", va="bottom", fontsize=7.0, fontweight="bold", color=C_GREEN)
-
-    # Published 27B Reference (index 2: ONLY the 3 evaluated quantities from Fan et al. [Ref])
-    ax2.axvline(1.52, color=C_GRAY, ls=":", lw=1.1)
-    x27 = 2.0
-    ax2.bar([x27 - 1.2 * w], [84.6], width=w, color="#CBD5E1", edgecolor="black", lw=0.65)
-    ax2.bar([x27], [7.3], width=w, color=C_RED, edgecolor="black", lw=0.65)
-    b_27_ed = ax2.bar([x27 + 1.2 * w], [70.2], width=w, color=C_PURP, edgecolor="black", lw=0.75)
-    ax2.text(x27 + 1.2 * w, 70.2 + 1.5, "83% Rec\n(15x Clip)", ha="center", va="bottom", fontsize=6.8, fontweight="bold", color=C_PURP)
+    for idx, (k, _) in enumerate(order):
+        h50 = v_row50[idx]
+        hed = v_edit[idx]
+        # Place concise numeric labels cleanly without horizontal collision
+        ax2.text(
+            x[idx] + w,
+            hed + 1.4,
+            f"{hed:.0f}",
+            ha="center",
+            va="bottom",
+            fontsize=6.3,
+            fontweight="bold",
+            color=C_PURP,
+        )
+        ax2.text(
+            x[idx] + 2 * w + 0.01,
+            h50 + 1.4,
+            f"{h50:.0f}",
+            ha="center",
+            va="bottom",
+            fontsize=6.3,
+            fontweight="bold",
+            color=C_GREEN,
+        )
+        rec = fh[k]["row50x_recovery_pct"]
+        top_cluster = max(v_clean[idx], v_glob[idx], hed, h50) + 7.5
+        ax2.text(
+            x[idx] + 0.08,
+            top_cluster,
+            f"{rec:.0f}% Rec",
+            ha="center",
+            va="bottom",
+            fontsize=6.4,
+            fontweight="bold",
+            color=C_GREEN,
+            bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="#A7F3D0", lw=0.55, alpha=0.95),
+        )
 
     ax2.set_xticks(x)
-    ax2.set_xticklabels(labels, fontsize=8.2, fontweight="bold")
-    ax2.set_ylabel("Unseen Task Accuracy (%)", fontsize=9.0, fontweight="bold")
-    ax2.set_ylim(0, 105)
-    ax2.set_title("(b) Reference-Free Fault Repair Across Protocols", fontsize=9.5, fontweight="bold", pad=10)
-    ax2.legend(loc="upper left", fontsize=6.9, ncol=2, frameon=True, facecolor="white")
+    ax2.set_xticklabels([lbl for _, lbl in order], fontsize=8.2, fontweight="bold")
+    ax2.set_ylabel("Held-Out Math Accuracy (%, N=20)", fontsize=8.8, fontweight="bold")
+    ax2.set_ylim(0, 134)
+    ax2.set_yticks([0, 20, 40, 60, 80, 100])
+    ax2.set_title("(b) Unified 200-Sigma Fault Repair Across 1.5B–27B", fontsize=9.4, fontweight="bold", pad=10)
+    ax2.legend(loc="upper left", fontsize=6.7, ncol=2, frameon=True, facecolor="white", columnspacing=0.9)
     ax2.grid(axis="y", ls="--", alpha=0.35)
 
-    fig.tight_layout(pad=0.8)
+    fig.tight_layout(pad=0.85)
     fig.savefig(FIG_DIR / "fig6_fault_self_healing.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
 def plot_fig7_unblocking_vs_acquisition(data: dict) -> None:
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.0))
+    law3 = data["law3_unseen_and_multiround"]
+    oneshot = law3["one_shot_unseen_api_n8"]
+    tbl = law3["six_round_table"]
+    traj = law3["six_round_spectral_trajectories"]
 
-    uva = data["unblocking_vs_new_skill_8b"]["unseen_private_api_0token_acc"]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.9, 4.15))
+
     methods = [
         "Frozen\nBase",
         "Zero-Grad\nSurgery",
         "1-Rd\nLoRA-TTT",
-        "Zero-Grad\n(8-Rd)",
-        "AlphaEdit\n(8-Rd)",
-        "Naive TTT\n(8-Rd)",
-        "HWGM\n(0-Tok)",
-        "HWGM +\nCLS-RAG",
+        "Zero-Grad\n(6-Rd)",
+        "AlphaEdit\nNull-Space",
+        "Sequential\nLoRA-TTT",
+        "O-LoRA\n(6-Rd)",
+        "Sleep-Replay\n+ Null-Space",
     ]
 
-    # Left regime (indices 0..2): 1-Shot Strictly Unseen Private APIs (single bar per method)
+    # Left (0..2): 1-Shot Unseen Private APIs (N=8, No Ref. Docs)
     x_left = np.array([0.0, 1.0, 2.0])
-    v_left = [uva["frozen_base"], uva["zero_grad_directional_surgery"], uva["associative_lowrank_ttt"]]
-    b_left = ax1.bar(x_left, v_left, width=0.42, color="#4F81BD", edgecolor="black", lw=0.7, label="1-Shot Unseen Private API (0-Tok %)")
+    v_left = [
+        oneshot["frozen_base"],
+        oneshot["zero_grad_surgery"],
+        oneshot["associative_lora_ttt"],
+    ]
+    b_left = ax1.bar(x_left, v_left, width=0.42, color="#4F81BD", edgecolor="black", lw=0.7, label="1-Shot Unseen APIs (No Ref. Docs)")
     for bar in b_left:
         h = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width() / 2, h + 1.4, f"{h:.0f}", ha="center", va="bottom", fontsize=6.9, fontweight="bold")
+        ax1.text(bar.get_x() + bar.get_width() / 2, h + 1.5, f"{h:.0f}%", ha="center", va="bottom", fontsize=6.6, fontweight="bold")
 
-    # Right regime (indices 3..7): 8-Round Non-Stationary HomeoToolBench (paired AvgAcc & v1->v2 Acc)
+    # Right (3..7): 6-Round Non-Stationary API Evolution (No Ref. Docs)
     ax1.axvline(2.52, color=C_GRAY, ls="--", lw=1.15)
     x_right = np.array([3.0, 4.0, 5.0, 6.0, 7.0])
     w = 0.34
-    tool_avg = [2.5, 32.9, 35.3, 81.5, 99.5]
-    v2_mig = [0.0, 0.0, 0.0, 66.7, 100.0]
-    b_r1 = ax1.bar(x_right - w / 2, tool_avg, width=w, color=C_BLUE, edgecolor="black", lw=0.7, label="8-Rd HomeoToolBench AvgAcc (%)")
-    b_r2 = ax1.bar(x_right + w / 2, v2_mig, width=w, color=C_GREEN, edgecolor="black", lw=0.7, label="8-Rd v1->v2 Migration Acc (%)")
+    keys_r = [
+        "Zero-Grad Directional Surgery",
+        "AlphaEdit Null-Space TTT",
+        "Sequential LoRA-TTT",
+        "O-LoRA",
+        "Sleep-Replay + Null-Space TTT",
+    ]
+    avg_r = [tbl[k]["stream_avg_acc"] for k in keys_r]
+    v2_r = [tbl[k]["v2_upgrade_acc"] for k in keys_r]
+
+    b_r1 = ax1.bar(x_right - w / 2, avg_r, width=w, color=C_BLUE, edgecolor="black", lw=0.7, label="6-Rd Active API Acc (%)")
+    b_r2 = ax1.bar(x_right + w / 2, v2_r, width=w, color=C_GREEN, edgecolor="black", lw=0.7, label="6-Rd v1->v2 Upgrade Acc (%)")
 
     for b in (b_r1, b_r2):
         for bar in b:
             h = bar.get_height()
-            lbl_s = f"{h:.1f}" if (0 < h < 5) else f"{h:.0f}"
-            ax1.text(bar.get_x() + bar.get_width() / 2, h + 1.4, lbl_s, ha="center", va="bottom", fontsize=6.5, fontweight="bold")
+            lbl = f"{h + 1e-6:.1f}" if abs(h - round(h)) > 0.05 else f"{h:.0f}"
+            ax1.text(bar.get_x() + bar.get_width() / 2, h + 1.4, lbl, ha="center", va="bottom", fontsize=5.9, fontweight="bold")
 
-    ax1.text(1.0, 117, "1-Shot Private API", ha="center", va="top", fontsize=7.2, fontweight="bold", color="#334155")
-    ax1.text(4.85, 117, "8-Round HomeoToolBench (Table 6)", ha="center", va="top", fontsize=7.2, fontweight="bold", color="#334155")
+    ax1.text(1.0, 118, "1-Shot Unseen API (N=8)", ha="center", va="top", fontsize=7.1, fontweight="bold", color="#334155")
+    ax1.text(5.1, 118, "6-Round Non-Stationary Stream (Table 6)", ha="center", va="top", fontsize=7.1, fontweight="bold", color="#334155")
 
     ax1.set_xticks(np.arange(len(methods)))
-    ax1.set_xticklabels(methods, fontsize=6.9, fontweight="bold")
-    ax1.set_ylabel("Accuracy (%)", fontsize=9.0, fontweight="bold")
-    ax1.set_ylim(0, 123)
-    ax1.set_title("(a) Zero-Grad Surgery vs. Associative Compilation", fontsize=9.5, fontweight="bold", pad=10)
-    ax1.legend(loc="upper left", bbox_to_anchor=(0.0, 0.89), fontsize=6.7, frameon=True, facecolor="white")
+    ax1.set_xticklabels(methods, fontsize=6.7, fontweight="bold")
+    ax1.set_ylabel("Accuracy (%, 0 Ref. Context Tokens)", fontsize=8.7, fontweight="bold")
+    ax1.set_ylim(0, 124)
+    ax1.set_yticks([0, 20, 40, 60, 80, 100])
+    ax1.set_title("(a) Zero-Grad Surgery vs. Associative Compilation", fontsize=9.4, fontweight="bold", pad=10)
+    # Place legend in open middle-upper region (x=0.355..0.75, y=0.60..0.88) above short 0%..12.5% bars!
+    ax1.legend(loc="upper left", bbox_to_anchor=(0.355, 0.88), fontsize=6.5, frameon=True, facecolor="white")
     ax1.grid(axis="y", ls="--", alpha=0.35)
 
-    # Panel (b): Exact Logged 8-Round post_sigma_max Trajectories (runs/exp1 & runs/exp6)
-    rounds = np.arange(1, 9)
-    traj = data["exact_multiround_sigma_trajectories"]
-    sigma_ewc = traj["ewc_ttt"]
-    sigma_naive = traj["naive_ttt"]
-    sigma_hwsm = traj["homeo_hwgm"]
+    # Panel (b): 6-Round Empirical Spectral Norm ||Delta W_t||_2 Trajectories
+    rounds = np.arange(1, 7)
+    s_seq = traj["Sequential LoRA-TTT"]
+    s_ewc = traj["EWC-LoRA-TTT"]
+    s_alp = traj["AlphaEdit Null-Space TTT"]
+    s_cls = traj["Sleep-Replay + Null-Space TTT"]
 
-    ax2.plot(rounds, sigma_ewc, color=C_AMBER, lw=2.0, marker="^", ls="--", label="EWC-TTT (Peak sigma=4.11, Core=0%)")
-    ax2.plot(rounds, sigma_naive, color=C_RED, lw=2.0, marker="s", label="Naive Sequential TTT (Peak sigma=2.36)")
-    ax2.plot(rounds, sigma_hwsm, color=C_GREEN, lw=2.4, marker="o", label="Wake-Sleep Homeostasis (sigma*=1.0725)")
-    ax2.axhline(1.25, color=C_GRAY, ls=":", lw=1.2, label="Homeostatic Cap (gamma=1.25)")
+    ax2.plot(rounds, s_seq, color=C_RED, lw=2.1, marker="s", label=f"Sequential LoRA-TTT (Peak={max(s_seq):.2f})")
+    ax2.plot(rounds, s_ewc, color=C_AMBER, lw=1.9, marker="^", ls="--", label=f"EWC-LoRA-TTT (Peak={max(s_ewc):.2f})")
+    ax2.plot(rounds, s_alp, color=C_PURP, lw=1.8, marker="d", ls="-.", label=f"AlphaEdit Null-Space (Peak={max(s_alp):.2f})")
+    ax2.plot(rounds, s_cls, color=C_GREEN, lw=2.3, marker="o", label="Sleep-Replay + Spectral Cap (<=4.80)")
+    ax2.axhline(4.80, color=C_GRAY, ls=":", lw=1.2, label="Configured Spectral Cap (4.80)")
 
     ax2.set_xticks(rounds)
-    ax2.set_xlabel("Continual Adaptation Round t", fontsize=9.0, fontweight="bold")
-    ax2.set_ylabel("Peak Adapter Singular Value (sigma_max)", fontsize=9.0, fontweight="bold")
-    ax2.set_ylim(0, 4.5)
-    ax2.set_title("(b) Multi-Round Spectral Runaway vs. Fixed-Point Attractor", fontsize=9.5, fontweight="bold", pad=10)
-    ax2.legend(loc="upper left", fontsize=7.4, frameon=True, facecolor="white")
+    ax2.set_xlabel("Adaptation Round t (1..6)", fontsize=8.8, fontweight="bold")
+    ax2.set_ylabel("Peak Adapter Spectral Norm ||ΔW_t||_2", fontsize=8.8, fontweight="bold")
+    ax2.set_ylim(0, 5.8)
+    ax2.set_title("(b) Empirical Spectral Norm Boundedness Over 6 Rounds", fontsize=9.4, fontweight="bold", pad=10)
+    # Lower-right region y=0.1..3.3 is completely open!
+    ax2.legend(loc="lower right", fontsize=7.1, frameon=True, facecolor="white")
     ax2.grid(True, ls="--", alpha=0.35)
 
-    fig.tight_layout(pad=0.8)
+    fig.tight_layout(pad=0.85)
     fig.savefig(FIG_DIR / "fig7_unblocking_vs_acquisition.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
 def plot_fig8_subspace_pitfalls(data: dict) -> None:
-    exp3 = data["exp3_subspace_geometry"]
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 3.9))
+    exp3 = data["abliteration_subspace_geometry"]
+    law4 = data["law4_safety_and_poisoning"]
+    ns_kl = law4["nullspace_locality_vs_end_to_end"]
+    pois = law4["controlled_stream_poisoning"]
 
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.8, 4.1))
+
+    # Panel (a): Abliteration Rank-1 Subspace Overlap + Layer-Local vs. Multi-Layer KL Note
     layers_2b = exp3["2B"]["layers"][:24]
     layers_9b = exp3["9B"]["layers"]
 
-    ax1.plot(np.linspace(0, 100, len(layers_2b)), [m["unshielded_core_cos"] for m in layers_2b],
-             color=C_RED, lw=1.9, marker="o", markersize=3.5, label="Unshielded 2B Directional Edit (srank=1.004)")
-    ax1.plot(np.linspace(0, 100, len(layers_9b)), [m["unshielded_core_cos"] for m in layers_9b],
-             color=C_PURP, lw=1.7, ls="--", marker="^", markersize=3.3, label="Unshielded 9B Directional Edit (max=0.764)")
-    ax1.plot(np.linspace(0, 100, len(layers_9b)), [m["shielded_core_cos"] for m in layers_9b],
-             color=C_GREEN, lw=2.3, marker="s", markersize=3.2, label="Right-Nullspace Shielded (<= 1e-6)")
+    ax1.plot(
+        np.linspace(0, 100, len(layers_2b)),
+        [m["unshielded_core_cos"] for m in layers_2b],
+        color=C_RED,
+        lw=1.9,
+        marker="o",
+        markersize=3.4,
+        label="Unshielded 2B Refusal Edit (srank=1.005)",
+    )
+    ax1.plot(
+        np.linspace(0, 100, len(layers_9b)),
+        [m["unshielded_core_cos"] for m in layers_9b],
+        color=C_PURP,
+        lw=1.7,
+        ls="--",
+        marker="^",
+        markersize=3.2,
+        label="Unshielded 9B Refusal Edit (max=0.764)",
+    )
+    ax1.plot(
+        np.linspace(0, 100, len(layers_9b)),
+        [m["shielded_core_cos"] for m in layers_9b],
+        color=C_GREEN,
+        lw=2.3,
+        marker="s",
+        markersize=3.1,
+        label="Layer-Local Right-Nullspace (<=1e-6)",
+    )
+    ax1.fill_between(
+        np.linspace(0, 100, len(layers_2b)),
+        0,
+        [m["unshielded_core_cos"] for m in layers_2b],
+        color=C_RED,
+        alpha=0.09,
+    )
 
-    ax1.fill_between(np.linspace(0, 100, len(layers_2b)), 0, [m["unshielded_core_cos"] for m in layers_2b],
-                     color=C_RED, alpha=0.10)
-    ax1.text(0.38, 0.68, "2B Refusal Edit Top-1 SVD = 99.55%",
-             transform=ax1.transAxes, fontsize=7.5, fontweight="bold", color=C_RED,
-             bbox=dict(boxstyle="round,pad=0.24", facecolor="#FEF2F2", edgecolor=C_RED, lw=0.8))
+    kl_u = ns_kl["end_to_end_logit_kl_unshielded_8layer"]
+    kl_s8 = ns_kl["end_to_end_logit_kl_shielded_8layer"]
+    kl_s1 = ns_kl["end_to_end_logit_kl_shielded_1layer"]
+    ax1.text(
+        0.29,
+        0.61,
+        f"End-to-End Anchor KL (Qwen3-8B):\n"
+        f"• Unshielded (8-Layer): {kl_u:.4f}\n"
+        f"• Null-Space (8-Layer): {kl_s8:.4f} (>0!)\n"
+        f"• Null-Space (1-Layer): {kl_s1:.4f}",
+        transform=ax1.transAxes,
+        fontsize=6.6,
+        fontweight="bold",
+        color="#1E293B",
+        bbox=dict(boxstyle="round,pad=0.24", facecolor="#F8FAFC", edgecolor="#94A3B8", lw=0.8, alpha=0.96),
+    )
 
-    ax1.set_xlabel("Normalized Network Depth (%)", fontsize=9.0, fontweight="bold")
-    ax1.set_ylabel("Cosine Overlap with Top-16 V_core", fontsize=9.0, fontweight="bold")
-    ax1.set_ylim(-0.04, 0.98)
-    ax1.set_title("(a) Rank-1 Abliteration Overlap & Right-Nullspace Shielding", fontsize=9.5, fontweight="bold", pad=10)
-    ax1.legend(loc="upper right", fontsize=7.1, frameon=True, facecolor="white")
+    ax1.set_xlabel("Normalized Network Depth (%)", fontsize=8.8, fontweight="bold")
+    ax1.set_ylabel("Layer-Local Anchor Subspace Overlap", fontsize=8.8, fontweight="bold")
+    ax1.set_ylim(-0.04, 1.06)
+    ax1.set_title("(a) Layer-Local Orthogonality vs. Multi-Layer Logit Drift", fontsize=9.3, fontweight="bold", pad=10)
+    ax1.legend(loc="upper right", fontsize=6.8, frameon=True, facecolor="white")
     ax1.grid(True, ls="--", alpha=0.35)
 
-    # Panel (b): Exact Logged Noise Sweep (runs/exp3_noise_sweep/all_results.json)
-    ns = data["exact_exp3_noise_sweep"]
-    noise_pct = ns["noise_levels_pct"]
-    trap_spec = ns["avg_trap_rate_pct"]["spectral_only"]
-    trap_ties = ns["avg_trap_rate_pct"]["ties_merging"]
-    trap_naive = ns["avg_trap_rate_pct"]["naive_ttt"]
-    trap_hwsm = ns["avg_trap_rate_pct"]["hwgm_homeo"]
+    # Panel (b): Fixed-Budget Stream Poisoning Sweep (M=16 docs, r=8, N_trig=16)
+    ratios = pois["poison_ratios_pct"]
+    asr = pois["trigger_asr_pct"]
 
-    ax2.plot(noise_pct, trap_spec, color=C_AMBER, lw=2.0, marker="d", ls="--", label="Spectral-Only SVD (Peak 33.5% Mean / 100% Rd)")
-    ax2.plot(noise_pct, trap_ties, color=C_RED, lw=2.0, marker="^", label="TIES-Merging (21.0% Mean at 70% / 100% Rd)")
-    ax2.plot(noise_pct, trap_naive, color=C_PURP, lw=1.9, marker="s", label="Naive Online LoRA-TTT (10.0% Mean / 48.9% Rd)")
-    ax2.plot(noise_pct, trap_hwsm, color=C_GREEN, lw=2.5, marker="o", label="Semantic IR Audit + HWGM (0.0% Across All)")
+    ax2.plot(
+        ratios,
+        asr["Unfiltered LoRA-TTT"],
+        color=C_RED,
+        lw=2.8,
+        marker="s",
+        markersize=6.5,
+        label="Unfiltered LoRA-TTT (r=8, 28 steps)",
+    )
+    ax2.plot(
+        ratios,
+        asr["Spectral Norm Clipping"],
+        color="#F59E0B",
+        lw=1.9,
+        marker="D",
+        markersize=4.5,
+        ls="--",
+        label="Spectral Norm Clipping (||ΔW||_2<=3.20)",
+    )
+    ax2.plot(
+        ratios,
+        asr["TIES-Merging"],
+        color=C_PURP,
+        lw=2.6,
+        marker="^",
+        markersize=6.8,
+        ls="-.",
+        label="TIES-Merging (4 Chunks)",
+    )
+    ax2.plot(
+        ratios,
+        asr["Logit-Lens SVD Screening"],
+        color=C_GREEN,
+        lw=1.9,
+        marker="o",
+        markersize=4.8,
+        label="Logit-Lens SVD Token Screening (0% ASR)",
+    )
 
-    ax2.set_xticks(noise_pct)
-    ax2.set_xticklabels(["0%", "25%", "50%", "70%"])
-    ax2.set_xlabel("Poisoned / Trap Document Ratio in Stream", fontsize=9.0, fontweight="bold")
-    ax2.set_ylabel("8-Round Mean Trap Assimilation (%)", fontsize=9.0, fontweight="bold")
-    ax2.set_ylim(-2, 42)
-    ax2.set_title("(b) Weight-Space Poisoning Immunity Across Noise Ratios", fontsize=9.5, fontweight="bold", pad=10)
-    ax2.legend(loc="upper left", fontsize=7.3, frameon=True, facecolor="white")
+    ax2.set_xticks(ratios)
+    ax2.set_xticklabels([f"{r:g}%" for r in ratios], fontsize=8.3, fontweight="bold")
+    ax2.set_xlabel("Poisoned Document Ratio in 16-Doc Stream", fontsize=8.8, fontweight="bold")
+    ax2.set_ylabel("Trigger Attack Success Rate (ASR %, N=16)", fontsize=8.8, fontweight="bold")
+    ax2.set_ylim(-5, 116)
+    ax2.set_yticks([0, 20, 40, 60, 80, 100])
+    ax2.set_title("(b) Controlled Stream Backdoor ASR Under Fixed Budget", fontsize=9.3, fontweight="bold", pad=10)
+    ax2.legend(loc="upper left", fontsize=6.9, frameon=True, facecolor="white")
     ax2.grid(True, ls="--", alpha=0.35)
 
-    fig.tight_layout(pad=0.8)
+    fig.tight_layout(pad=0.85)
     fig.savefig(FIG_DIR / "fig8_subspace_pitfalls.pdf", bbox_inches="tight")
     plt.close(fig)
 
@@ -332,7 +483,7 @@ def main() -> None:
     plot_fig6_fault_self_healing(data)
     plot_fig7_unblocking_vs_acquisition(data)
     plot_fig8_subspace_pitfalls(data)
-    print("Successfully generated empirical figures 5-8 in", FIG_DIR)
+    print("Successfully generated clean empirical figures 5-8 in", FIG_DIR)
 
 
 if __name__ == "__main__":

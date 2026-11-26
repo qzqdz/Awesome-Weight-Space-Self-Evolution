@@ -16,7 +16,7 @@
   <img src="assets/fig0_teaser.png" width="96%" alt="Breaking the Training-Inference Wall via Autonomic Weight Compilation"/>
 </p>
 
-> **Overview:** Nearly every deployed LLM obeys a rigid *"train-once, freeze-forever"* contract, relying either on costly cluster retraining or inference-time context scaffolds with recurring $\mathcal{O}(N)$ token overhead. **Weight-Space Self-Evolution** dismantles the wall between training and inference by granting adaptation pipelines, external teacher models, and ultimately the deployed model itself direct read–write agency over internal parameters. Viewed through our unifying **Autonomic Weight Compilation** framework ($\Pi_{\text{comp}} \equiv \pi_{\Theta_t}$), recent systems demonstrate self-hosting parameter compilation—inspecting hidden states and authoring localized tensor patches in isolated Python sandboxes—eliminating $\mathcal{O}(N)$ prompt-context growth (and incurring zero extra FLOPs/token when updates are merged directly into base weights).
+> **Overview:** Deployed LLMs traditionally obey a rigid *"train-once, freeze-forever"* contract, relying either on offline cluster retraining or inference-time context scaffolds with recurring $\mathcal{O}(N)$ token overhead. **Weight-Space Self-Evolution** dismantles the wall between training and inference by granting adaptation pipelines, external teacher models, and the deployed model itself direct read–write agency over internal parameters. Viewed through our unifying **Autonomic Weight Compilation** framework ($\Pi_{\text{comp}} \equiv \pi_{\Theta_t}$), recent systems inspect hidden states and author localized tensor patches in isolated Python sandboxes—eliminating $\mathcal{O}(N)$ reference-context growth and incurring zero extra FLOPs/token when updates are merged directly into base weights.
 
 ---
 
@@ -42,9 +42,9 @@
 ## The Self-Hosting Neural Compiler Triad & Evolution Timeline
 
 We formalize dynamic parameter evolution as a **Constrained Weight-Space Markov Decision Process ($\mathcal{M}_{\mathcal{W}}$)** over the closed-loop triad $\mathcal{S}_{\text{comp}} = \langle \Theta_t, \Pi_{\text{comp}}, \mathcal{E}_{\text{gate}} \rangle$:
-1. **Mutable Weight Substrate & Core ISA ($\Theta_t$):** Structured MLP matrices, low-rank adapters, and right-nullspace ISA shields;
+1. **Mutable Weight Substrate & Core ISA ($\Theta_t$):** Structured MLP matrices, low-rank adapters, and layer-local right-nullspace shields;
 2. **Introspective Compiler Policy ($\Pi_{\text{comp}}$):** Progressing across four generations—*Analytical Patcher* $\to$ *Online TTT & Hypernetwork* $\to$ *Exogenous Cross-Compiler* $\to$ *Autonomic Self-Hosting Compiler* ($\Pi_{\text{comp}} \equiv \pi_{\Theta_t}$);
-3. **Transactional Gate Sandbox ($\mathcal{E}_{\text{gate}}$):** Enforcing shadow-twin execution, *Commit-or-Revert* / *Eviction Equivalence* verification, and falsification-driven decompilation.
+3. **Transactional Gate Sandbox ($\mathcal{E}_{\text{gate}}$):** Enforcing shadow-twin execution, *Commit-or-Revert* / *Eviction Equivalence* verification, and episodic consolidation.
 
 <p align="center">
   <img src="assets/fig1_triad_overview.png" width="96%" alt="Self-Hosting Neural Compiler Triad"/>
@@ -66,26 +66,24 @@ We formalize dynamic parameter evolution as a **Constrained Weight-Space Markov 
   <img src="assets/fig4_five_paradigms.png" width="92%" alt="Five Compilation Paradigms"/>
 </p>
 
-| Paradigm | Compiler Agency ($\Pi_{\text{comp}}$) | Grad-Free? | Teacher-Free? | Dense Skill Compile | Multi-Round Drift / Echo Risk | Systems Analogy |
+| Paradigm | Compiler Agency ($\Pi_{\text{comp}}$) | Gradient-Free? | Teacher-Free? | Dense Skill Compile | Multi-Round Drift / Echo Risk | Systems Analogy |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | **`SPM`** *(Surgical Parameter Patching)* | Algebraic Solver | Yes | Yes | Moderate | High (Static v1 Lock-in) | Binary Hot-Patch |
 | **`OTAM`** *(Online Trajectory Adaptation)* | Local SGD / Hypernet | Partial | Yes | **Very High** | High (Belief Echo Chamber) | JIT Trace Lowering |
 | **`EWSM`** *(Exogenous Weight Synthesis)* | External Frontier LLM | Yes | No | Low–Moderate | Moderate | Cross-Compiler |
 | **`AWCM`** *(Autonomic Weight Compilation)* | **Same Model ($\pi_{\Theta_t}$)** | **Yes (REPL) / Dual** | **Yes** | Low (Unblocking)* | Low (Gated) | **Self-Hosting Patcher** |
-| **`HWGM`** *(Homeostatic Wake–Sleep Layer)* | Dual-Phase IR Audit | Composable | Optional | Preserved | **Bounded ($\sigma^* = 1.073$)** | ISA Linker & Decompiler |
-
-> **Next-Generation Architecture — Epistemic Belief Compilation (`AWCM` + `HWGM`):** *Extending endogenous `AWCM` from localized REPL tensor unblocking/clipping on fixed architectures to dense world-schema acquisition, this dual-track architecture couples explicit inference-time belief state machines ($\mathcal{B}_t = (\mathcal{S}_t, \mathcal{U}_t)$) as a Popperian falsification frontend with associative low-rank lowering and **Context-Eviction Equivalence Gates** toward higher-order **Staircase RSI**.*
+| **`HWGM`** *(Homeostatic Wake–Sleep Layer)* | Dual-Phase Replay & SVD Screen | Composable | Optional | Preserved | **Bounded ($\|\Delta W_t\|_2 \le \gamma$)** | Linker & Guard |
 
 ---
 
 ## Unified Empirical Benchmark & Four Governing Laws
 
-Going beyond literature review, this repository includes our controlled diagnostic benchmark suite spanning `Qwen3.5-{2B, 4B, 9B}` (cross-referenced with published `27B` benchmarks), safety-abliterated weight geometry, fault-injected `1.5B`–`8B` checkpoints, and $12$-method, $8$-round non-stationary tool/repository adaptation:
+Executed on `NVIDIA H100 80GB HBM3` GPUs in `bfloat16`, this repository provides a clean, self-contained benchmark suite spanning `Qwen3.5-{2B, 4B, 9B, 27B}`, `Qwen2.5-1.5B-Instruct`, `Qwen2.5-7B-Instruct`, and `Qwen3-8B` across published adaptation baselines:
 
-1. **Law 1 — Scale Emergence Cliff & Decoupled `1.5B` Rescue:** Within the `Qwen3.5` family, monolithic REPL weight patching fails at `2B`–`4B` (dimensional/indexing hallucinations) and `9B` ($110.85\times$ Frobenius norm blow-up due to broadcast step-size miscalibration), emerging reliably at the `27B` scale ($57.2\% \to 63.8\%$); in a complementary edge experiment on a `1.5B` model, delegating $1\,\text{KB}$ semantic IR auditing to a $7\text{B}$/$9\text{B}$ local or cloud auditor lifts $8$-round accuracy from $21.6\% \to 43.5\%$–$45.1\%$ ($0\%$ traps).
-2. **Law 2 — Reference-Free Fault Repair Across Protocols:** Distinguishing fault-injection and editor setups: in published `Qwen3.5-27B` experiments ($8$ contiguous rows with $200\sigma$ Gaussian noise, yielding a $1397\times$ outlier), an *uncorrupted* `27B` editor without access to clean reference tensors $W_0$ applied $15\times$ median magnitude clipping across output matrices to recover $0.0\% \to 33.0\%$ on held-out math, $7.3\% \to 70.2\%$ ($83.0\%$ of $84.6\%$ pristine) across $6$ vision benchmarks, and $0\% \to 89\%$ on `ScreenSpot-v2`. In our local `1.5B`–`8B` experiments ($8$ rows scaled to $1397\times$ median row-RMS), gradient LoRA-TTT ($0.0\%$) and uncorrupted-editor sub-$10\text{B}$ scripts ($0.0\%$) fail, whereas standalone deterministic $50\times$ row-RMS zeroing (requiring neither $W_0$ nor an LLM editor) recovers $88.9\%$–$100.0\%$ of pristine math accuracy.
-3. **Law 3 — Unblocking Latent Circuits vs. Compiling Unseen Schemas:** On $1$-shot strictly unseen private APIs with non-guessable constants, zero-gradient directional surgery scores $0.0\%$ (vs. $25.0\%$ for $1$-round LoRA-TTT); across the $8$-round `HomeoToolBench` stream, zero-gradient projection records $2.5\%$ `AvgAcc` ($0.0\%$ on `v1 -> v2` migrations), whereas associative compilation governed by `HWGM` achieves $81.5\%$ ($0$-token, $>2.3\times$ the strongest $0$-token baseline and $2.7\times$ raw `ICL-RAG` on `v1 -> v2` upgrades) and $99.5\%$ (with `CLS-RAG`) under fixed-point spectral convergence ($\sigma^* = 1.0725$).
-4. **Law 4 — Algebraic Isomorphism with Safety Abliteration & Stream Trap Defense:** Streaming SVD reveals that refusal erasure concentrates $99.55\%$ top-$1$ spectral energy (`srank = 1.0045`) with $0.49$–$0.76$ core subspace cosine overlap; enforcing right-nullspace locks ($\Delta W V_{\text{guard}} = 0$ on spanned anchors) alongside Logit-Lens/SAE IR probes achieves $<10^{-6}$ anchor overlap and $0.0\%$ backdoor assimilation across evaluated $0\%$–$70\%$ trap streams (vs. $21.0\%$–$35.0\%$ mean and up to $100\%$ single-round trap firing in uncurated baselines).
+1. **Law 1 — Scale Emergence Cliff & Exogenous Cross-Compilation (`Qwen3.5-2B/4B/9B/27B`):** Endogenous Python REPL patching exhibits a sharp metacognitive scale cliff—sub-$10\text{B}$ models suffer dimensional/indexing hallucinations or $>100\times$ broadcast norm blow-ups when unguarded, whereas `Qwen3.5-27B` synthesizes calibrated rank-1 projections ($30.0\% \to 80.0\%$ on our $196$-token budget suite; $57.2\% \to 63.8\%$ on held-out math in Fan et al., 2026). Using `Qwen3.5-27B` as an exogenous cross-compiler (`EWSM`) bypasses the sub-$10\text{B}$ cliff for `2B`/`4B`/`9B` targets.
+2. **Law 2 — Reference-Free $200\sigma$ Weight-Outlier Repair (`1.5B`–`27B`):** Under contiguous $8$-row $200\sigma$ Gaussian corruption (Layer $30$ on `Qwen3.5-27B`, $196.1\times$ row-RMS outlier), few-shot gradient LoRA-TTT fails ($0.0\%$) due to RMSNorm saturation, whereas reference-free outlier localization paired with `27B` editor-authored repair ($65.0\%$) or standalone $50\times$ row-RMS zeroing ($65.0\%$, $100.0\%$ recovery without $W_0$) restores accuracy in seconds.
+3. **Law 3 — Expressivity Boundary & 6-Round Non-Stationary API Evolution (`Qwen3-8B`):** On $1$-shot strictly unseen symbolic APIs ($N=8$, zero reference-context tokens), zero-gradient directional surgery scores $0.0\%$ vs. $100.0\%$ for associative LoRA-TTT. Across $6$ non-stationary rounds with Round-$4$ `v1 -> v2` deprecations, static input null-space projection (`AlphaEdit`) locks Round-$1$ keys and blocks `v2` upgrades, whereas episodic sleep replay paired with general-anchor null-space projection and spectral norm capping achieves $100.0\%$ active accuracy and $100.0\%$ `v2` migration with $0$ reference-context tokens.
+4. **Law 4 — Layer-Local vs. Multi-Layer Null-Space & Stream Poisoning Screening:** Streaming SVD confirms that safety-refusal abliteration is rank-$1$ ($99.55\%$ top-$1$ singular energy on `Qwen3.5-2B`) with $0.49$–$0.76$ core-subspace overlap. While layer-local right-nullspace projection reduces $\|\Delta W_\ell V_{\text{anchor},\ell}\|_F / \|\Delta W_\ell\|_F$ to $\le 10^{-6}$, multi-layer nonlinear propagation across $8$ edited layers still induces nonzero end-to-end output KL ($0.0025$ vs. $0.0008$ single-layer), motivating end-to-end verification alongside Logit-Lens singular-vector screening against stream backdoors.
 
 <p align="center">
   <img src="assets/fig5_scale_emergence.png" width="49%" alt="Law 1 Scale Emergence"/>
@@ -105,14 +103,11 @@ git clone https://github.com/qzqdz/Awesome-Weight-Space-Self-Evolution.git
 cd Awesome-Weight-Space-Self-Evolution
 pip install -r requirements.txt
 
-# 1. Regenerate all 4 empirical law figures from verified benchmark logs:
+# 1. Regenerate all 4 empirical law figures from verified H100 benchmark logs:
 python benchmarks/plot_empirical_laws.py
 
-# 2. Run live reference-free 1397x fault self-healing & unseen private API suite:
-python benchmarks/run_fault_healing_and_unseen_api.py
-
-# 3. Run multi-scale sandbox agency & streaming SVD abliteration subspace audit:
-python benchmarks/run_scale_and_subspace_audit.py --exp all
+# 2. Run the full self-contained 4-law empirical suite (Law 1-4 across 1.5B-27B):
+python benchmarks/run_clean_h100_survey_suite.py --only all --out benchmarks/results/clean_survey_benchmark.json
 ```
 
 ---
@@ -149,7 +144,7 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `ACM CSUR 2025` **Model Merging in LLMs, MLLMs, and Beyond: Methods, Theories, Applications and Opportunities** — *Enneng Yang, Li Shen, Guibing Guo et al.* [[arXiv:2408.07666](https://arxiv.org/abs/2408.07666)]
 - `ACM Transactions on Information Systems 2025` **A Survey on the Memory Mechanism of Large Language Model based Agents** — *Zeyu Zhang, Xiaohe Bo, Chen Ma et al.*
 - `arXiv 2025` **A Survey of Vibe Coding with Large Language Models** — *Yuyao Ge, Lingrui Mei, Zenghao Duan et al.* [[arXiv:2510.12399](https://arxiv.org/abs/2510.12399)]
-- `arXiv 2025` **A Survey of Self-Evolving Agents: On Path to Artificial Super Intelligence** — *Huan-ang Gao, Jiayi Geng, Wenyue Hua et al.* [[arXiv:2507.21046](https://arxiv.org/abs/2507.21046)]
+- `arXiv 2025` **A Survey of Self-Evolving Agents: What, When, How, and Where to Evolve on the Path to Artificial Super Intelligence** — *Huan-ang Gao, Jiayi Geng, Wenyue Hua et al.* [[arXiv:2507.21046](https://arxiv.org/abs/2507.21046)]
 - `arXiv 2025` **A Survey of Context Engineering for Large Language Models** — *Lingrui Mei, Jiayu Yao, Yuyao Ge et al.* [[arXiv:2507.13334](https://arxiv.org/abs/2507.13334)]
 - `International Journal of Computer Vision 2025` **A Comprehensive Survey on Test-Time Adaptation Under Distribution Shifts** — *Jian Liang, Ran He, Tieniu Tan*
 - `arXiv 2025` **A Comprehensive Survey of Self-Evolving AI Agents: A New Paradigm Bridging Foundation Models and Lifelong Agentic Systems** — *Jinyuan Fang, Yanwen Peng, Xi Zhang et al.* [[arXiv:2508.07407](https://arxiv.org/abs/2508.07407)]
@@ -170,33 +165,19 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `Nature 2005` **Sleep-Dependent Memory Consolidation** — *Robert Stickgold*
 - `1959` **The Logic of Scientific Discovery** — *Karl R. Popper*
 
-### 3. Mechanistic Introspection, Outliers & Feature Probes (25 papers)
+### 3. Mechanistic Introspection, Outliers & Feature Probes (11 papers)
 
 - `ICLR 2025` **Scaling and Evaluating Sparse Autoencoders** — *Leo Gao, Tom Dupré la Tour, Henk Tillman et al.*
-- `arXiv 2025` **Do NOT Think That Much for 2+3=? On the Overthinking of o1-Like LLMs** — *Xingyu Chen, Jiahao Xu, Tian Liang et al.* [[arXiv:2412.21187](https://arxiv.org/abs/2412.21187)]
-- `ACL 2024` **Steering Llama 2 via Contrastive Activation Addition** — *Nina Rimsky, Nick Gabrieli, Julian Schulz et al.*
-- `Transformer Circuits Thread 2024` **Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet** — *Adly Templeton, Tom Conerly, Jonathan Marcus et al.*
 - `NeurIPS 2024` **Refusal in Language Models Is Mediated by a Single Direction** — *Andy Arditi, Oscar Obeso, Aaquib Syed et al.*
 - `COLM 2024` **Massive Activations in Large Language Models** — *Mingjie Sun, Xinlei Chen, J. Zico Kolter, Zhuang Liu*
-- `Proceedings of the 7th BlackboxNLP Workshop: Analyzing and Interpreting Neural Networks for NLP 2024` **Gemma Scope: Open Sparse Autoencoders Everywhere All At Once on Gemma 2** — *Tom Lieberum, Senthooran Rajamanoharan, Arthur Conmy et al.*
-- `ICLR 2024` **Efficient Streaming Language Models with Attention Sinks** — *Guangxuan Xiao, Yuandong Tian, Beidi Chen et al.*
 - `Transformer Circuits Thread 2023` **Towards Monosemanticity: Decomposing Language Models With Dictionary Learning** — *Trenton Bricken, Adly Templeton, Joshua Batson et al.*
-- `NeurIPS 2023` **Towards Automated Circuit Discovery for Mechanistic Interpretability** — *Arthur Conmy, Augustine N. Mavor-Parker, Aengus Lynch et al.*
 - `arXiv 2023` **Steering Language Models With Activation Engineering** — *Alexander Matt Turner, Lisa Thiergart, Gavin Leech et al.* [[arXiv:2308.10248](https://arxiv.org/abs/2308.10248)]
 - `arXiv 2023` **Representation Engineering: A Top-Down Approach to AI Transparency** — *Andy Zou, Long Phan, Sarah Chen et al.* [[arXiv:2310.01405](https://arxiv.org/abs/2310.01405)]
-- `NeurIPS 2023` **LEACE: Perfect Linear Concept Erasure in Closed Form** — *Nora Belrose, David Schneider-Joseph, Shauli Ravfogel et al.*
-- `NeurIPS 2023` **Inference-Time Intervention: Eliciting Truthful Answers from a Language Model** — *Kenneth Li, Oam Patel, Fernanda Viégas et al.*
-- `NeurIPS 2023` **Fine-Tuning Language Models with Just Forward Passes** — *Sadhika Malladi, Tianyu Gao, Eshaan Nichani et al.*
 - `arXiv 2023` **Eliciting Latent Predictions from Transformers with the Tuned Lens** — *Nora Belrose, Zach Furman, Logan Smith et al.* [[arXiv:2303.08112](https://arxiv.org/abs/2303.08112)]
 - `ACL 2023` **Analyzing Transformers in Embedding Space** — *Guy Dar, Mor Geva, Ankit Gupta, Jonathan Berant*
 - `EMNLP 2022` **Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space** — *Mor Geva, Avi Caciularu, Kevin Wang, Yoav Goldberg*
 - `NeurIPS 2022` **LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale** — *Tim Dettmers, Mike Lewis, Younes Belkada, Luke Zettlemoyer*
-- `Transformer Circuits Thread 2022` **In-Context Learning and Induction Heads** — *Catherine Olsson, Nelson Elhage, Neel Nanda et al.*
 - `EMNLP 2021` **Transformer Feed-Forward Layers Are Key-Value Memories** — *Mor Geva, Roei Schuster, Jonathan Berant, Omer Levy*
-- `arXiv 2021` **Silent Data Corruptions at Scale** — *Harish Dattatraya Dixit, Sneha Pendharkar, Macro Mattan et al.* [[arXiv:2102.11245](https://arxiv.org/abs/2102.11245)]
-- `Transformer Circuits Thread 2021` **A Mathematical Framework for Transformer Circuits** — *Nelson Elhage, Neel Nanda, Catherine Olsson et al.*
-- `ICLR 2020` **The Curious Case of Neural Text Degeneration** — *Ari Holtzman, Jan Buys, Li Du et al.*
-- `ICCV 2019` **Bit-Flip Attack: Crushing Neural Network with Progressive Bit Search** — *Adnan Siraj Rakin, Zhezhi He, Deliang Fan*
 
 ### 4. Surgical Parameter Patching & Null-Space Editing (SPM) (24 papers)
 
@@ -209,12 +190,12 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `EMNLP 2024` **Model Editing Harms General Abilities of Large Language Models: Regularization to the Rescue** — *Jia-Chen Gu, Hao-Xiang Xu, Jun-Yu Ma et al.*
 - `ICLR 2024` **Massive Editing for Large Language Models via Meta-Learning** — *Chenmien Tan, Ge Zhang, Jie Fu*
 - `AAAI 2024` **MELO: Enhancing Model Editing with Neuron-Indexed Dynamic LoRA** — *Lang Yu, Qin Chen, Jie Zhou, Liang He*
-- `ICML 2024` **Larimar: Large Language Models with Episodic Memory Control** — **
-- `ACL 2024` **Evaluating the Ripple Effects of Knowledge Editing in Language Models** — *Roi Cohen, Eden Biran, Ori Yoran et al.*
+- `ICML 2024` **Larimar: Large Language Models with Episodic Memory Control** — *Payel Das, Subhajit Chaudhury, Elliot Nelson et al.*
+- `TACL 2024` **Evaluating the Ripple Effects of Knowledge Editing in Language Models** — *Roi Cohen, Eden Biran, Ori Yoran et al.*
 - `ACL 2024` **EasyEdit: An Easy-to-Use Knowledge Editing Framework for Large Language Models** — *Peng Wang, Ningyu Zhang, Bozhong Tian et al.*
 - `ACL 2024` **Detoxifying Large Language Models via Knowledge Editing** — *Mengru Wang, Ningyu Zhang, Ziwen Xu et al.*
 - `ICLR 2024` **BadEdit: Backdooring Large Language Models by Model Editing** — *Yanzhou Li, Tianlin Li, Kangjie Chen et al.*
-- `EMNLP 2024` **A Unified Framework for Model Editing** — *Akshat Gupta, Dev Sajan Baskaran, Gopala Anumanchipalli*
+- `EMNLP 2024` **A Unified Framework for Model Editing** — *Akshat Gupta, Dev Sajnani, Gopala Anumanchipalli*
 - `ICLR 2023` **Mass-Editing Memory in a Transformer** — *Kevin Meng, Arnab Sen Sharma, Alex Andonian et al.*
 - `EMNLP 2023` **MQuAKE: Assessing Knowledge Editing in Language Models via Multi-Hop Questions** — *Zexuan Zhong, Zhengxuan Wu, Christopher D. Manning et al.*
 - `NeurIPS 2023` **Does Localization Inform Editing? Surprising Differences in Causality-Based Localization vs. Knowledge Editing in Language Models** — *Peter Hase, Mohit Bansal, Been Kim, Asma Ghandeharioun*
@@ -232,7 +213,7 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `ICML 2025` **The Surprising Effectiveness of Test-Time Training for Few-Shot Learning** — *Ekin Akyürek, Mehul Damani, Adam Zweiger et al.*
 - `ICML 2025` **Text-to-LoRA: Instant Transformer Adaption** — *Rujikorn Charakorn, Edoardo Cetin, Yujin Tang, Robert Tjarko Lange*
 - `arXiv 2025` **Test-Time Training Done Right** — *Tianyuan Zhang, Sai Bi, Yicong Hong et al.* [[arXiv:2505.23884](https://arxiv.org/abs/2505.23884)]
-- `arXiv 2025` **Sleep-Time Compute: Beyond Inference Scaling at Test-Time** — *Kevin Lin, Charlie Snell, Ion Stoica, Joseph E. Gonzalez* [[arXiv:2504.13171](https://arxiv.org/abs/2504.13171)]
+- `arXiv 2025` **Sleep-Time Compute: Beyond Inference Scaling at Test-Time** — *Kevin Lin, Charlie Snell, Yu Wang et al.* [[arXiv:2504.13171](https://arxiv.org/abs/2504.13171)]
 - `arXiv 2025` **Self-Adapting Language Models** — *Adam Zweiger, Jyothish Pari, Han Guo et al.* [[arXiv:2506.10943](https://arxiv.org/abs/2506.10943)]
 - `ICML 2025` **Learning to (Learn at Test Time): RNNs with Expressive Hidden States** — *Yu Sun, Xinhao Li, Karan Dalal et al.*
 - `ICLR 2025` **Gated Delta Networks: Improving Mamba2 with Delta Rule** — *Songlin Yang, Jan Kautz, Ali Hatamizadeh*
@@ -257,29 +238,38 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `ICML 2018` **Dynamic Evaluation of Neural Sequence Models** — *Ben Krause, Emmanuel Kahembwe, Iain Murray, Steve Renals*
 - `ICLR 2017` **HyperNetworks** — *David Ha, Andrew Dai, Quoc V. Le*
 
-### 6. Subspace PEFT, Modular Adapters & Model Merging (29 papers)
+### 6. Subspace PEFT, Modular Adapters & Model Merging (43 papers)
 
 - `ICLR 2025` **Transformer-Squared: Self-Adaptive LLMs** — *Qi Sun, Edoardo Cetin, Yujin Tang* [[arXiv:2501.06252](https://arxiv.org/abs/2501.06252)]
 - `Nature Mach. Intell. 2025` **Evolutionary Optimization of Model Merging Recipes** — *Takuya Akiba, Makoto Shing, Yujin Tang et al.*
+- `arXiv 2025` **Do NOT Think That Much for 2+3=? On the Overthinking of o1-Like LLMs** — *Xingyu Chen, Jiahao Xu, Tian Liang et al.* [[arXiv:2412.21187](https://arxiv.org/abs/2412.21187)]
 - `ICLR 2024` **ZipIt!: Merging Models from Different Tasks without Training** — *George Stoica, Daniel Bolya, Jakob Bjorner et al.*
 - `ICLR 2024` **VeRA: Vector-Based Random Matrix Adaptation** — *Dawid J. Kopiczko, Tijmen Blankevoort, Yuki M. Asano*
 - `ICML 2024` **Towards Scalable and Versatile Weight Space Learning** — *Konstantin Schürholt, Michael W. Mahoney, Damian Borth*
 - `ICML 2024` **Towards Modular LLMs by Building and Reusing a Library of LoRAs** — *Oleksiy Ostapenko, Zhan Su, Edoardo Maria Ponti et al.*
+- `ACL 2024` **Steering Llama 2 via Contrastive Activation Addition** — *Nina Rimsky, Nick Gabrieli, Julian Schulz et al.*
+- `Transformer Circuits Thread 2024` **Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet** — *Adly Templeton, Tom Conerly, Jonathan Marcus et al.*
 - `NeurIPS 2024` **PiSSA: Principal Singular Values and Singular Vectors Adaptation of Large Language Models** — *Fanxu Meng, Zhaohui Wang, Muhan Zhang*
 - `NeurIPS 2024` **Parameter Competition Balancing for Model Merging** — *Guodong Du, Junlin Lee, Jing Li et al.*
-- `ICML 2024` **Localizing Task Information for Improved Model Merging and Compression** — **
+- `ICML 2024` **Localizing Task Information for Improved Model Merging and Compression** — *Ke Wang, Nikolaos Dimitriadis, Guillermo Ortiz-Jimenez et al.*
 - `COLM 2024` **LoRAHub: Efficient Cross-Task Generalization via Dynamic LoRA Composition** — *Chengsong Huang, Qian Liu, Bill Yuchen Lin et al.*
 - `ICML 2024` **LoRA+: Efficient Low Rank Adaptation of Large Models** — *Soufiane Hayou, Nikhil Ghosh, Bin Yu*
 - `ICML 2024` **Language Models Are Super Mario: Absorbing Abilities from Homologous Models as a Free Lunch** — *Le Yu, Bowen Yu, Haiyang Yu et al.*
 - `CVPR 2024` **InfLoRA: Interference-Free Low-Rank Adaptation for Continual Learning** — *Yan-Shuo Liang, Wu-Jun Li*
+- `Proceedings of the 7th BlackboxNLP Workshop: Analyzing and Interpreting Neural Networks for NLP 2024` **Gemma Scope: Open Sparse Autoencoders Everywhere All At Once on Gemma 2** — *Tom Lieberum, Senthooran Rajamanoharan, Arthur Conmy et al.*
 - `ICML 2024` **GaLore: Memory-Efficient LLM Training by Gradient Low-Rank Projection** — *Jiawei Zhao, Zhenyu Zhang, Beidi Chen et al.*
+- `ICLR 2024` **Efficient Streaming Language Models with Attention Sinks** — *Guangxuan Xiao, Yuandong Tian, Beidi Chen et al.*
 - `NeurIPS 2024` **EMR-Merging: Tuning-Free High-Performance Model Merging** — *Chenyu Huang, Peng Ye, Tao Chen et al.*
 - `ICML 2024` **DoRA: Weight-Decomposed Low-Rank Adaptation** — *Shih-Yang Liu, Chien-Yi Wang, Hongxu Yin et al.*
 - `ICLR 2024` **AdaMerging: Adaptive Model Merging for Multi-Task Learning** — *Enneng Yang, Zhenyi Wang, Li Shen et al.*
+- `NeurIPS 2023` **Towards Automated Circuit Discovery for Mechanistic Interpretability** — *Arthur Conmy, Augustine N. Mavor-Parker, Aengus Lynch et al.*
 - `NeurIPS 2023` **Task Arithmetic in the Tangent Space: Improved Editing of Pre-Trained Models** — *Guillermo Ortiz-Jimenez, Alessandro Favero, Pascal Frossard*
 - `NeurIPS 2023` **TIES-Merging: Resolving Interference When Merging Models** — *Prateek Yadav, Derek Tam, Leshem Choshen et al.*
 - `NeurIPS 2023` **QLoRA: Efficient Finetuning of Quantized LLMs** — *Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, Luke Zettlemoyer*
 - `EMNLP 2023` **Orthogonal Subspace Learning for Language Model Continual Learning** — *Xiao Wang, Tianze Chen, Qiming Ge et al.*
+- `NeurIPS 2023` **LEACE: Perfect Linear Concept Erasure in Closed Form** — *Nora Belrose, David Schneider-Joseph, Shauli Ravfogel et al.*
+- `NeurIPS 2023` **Inference-Time Intervention: Eliciting Truthful Answers from a Language Model** — *Kenneth Li, Oam Patel, Fernanda Viégas et al.*
+- `NeurIPS 2023` **Fine-Tuning Language Models with Just Forward Passes** — *Sadhika Malladi, Tianyu Gao, Eshaan Nichani et al.*
 - `ICLR 2023` **Editing Models with Task Arithmetic** — *Gabriel Ilharco, Marco Tulio Ribeiro, Mitchell Wortsman et al.*
 - `ICLR 2023` **Dataless Knowledge Fusion by Merging Weights of Language Models** — *Xisen Jin, Xiang Ren, Daniel Preotiuc-Pietro, Pengxiang Cheng*
 - `ICLR 2023` **AdaLoRA: Adaptive Budget Allocation for Parameter-Efficient Fine-Tuning** — *Qingru Zhang, Minshuo Chen, Alexander Bukharin et al.*
@@ -287,13 +277,18 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `NeurIPS 2022` **Merging Models with Fisher-Weighted Averaging** — *Michael S. Matena, Colin A. Raffel*
 - `ICLR 2022` **LoRA: Low-Rank Adaptation of Large Language Models** — *Edward J. Hu, Yelong Shen, Phillip Wallis et al.*
 - `ECCV 2022` **Learning to Learn with Generative Models of Neural Network Checkpoints** — *William Peebles, Ilija Radosavovic, Tim Brooks et al.*
+- `Transformer Circuits Thread 2022` **In-Context Learning and Induction Heads** — *Catherine Olsson, Nelson Elhage, Neel Nanda et al.*
 - `ICML 2022` **HyperPrompt: Prompt-Based Task-Conditioning of Transformers** — *Yun He, Steven Zheng, Yi Tay et al.*
+- `arXiv 2021` **Silent Data Corruptions at Scale** — *Harish Dattatraya Dixit, Sneha Pendharkar, Matt Beadon et al.* [[arXiv:2102.11245](https://arxiv.org/abs/2102.11245)]
+- `Transformer Circuits Thread 2021` **A Mathematical Framework for Transformer Circuits** — *Nelson Elhage, Neel Nanda, Catherine Olsson et al.*
+- `ICLR 2020` **The Curious Case of Neural Text Degeneration** — *Ari Holtzman, Jan Buys, Li Du et al.*
+- `ICCV 2019` **Bit-Flip Attack: Crushing Neural Network with Progressive Bit Search** — *Adnan Siraj Rakin, Zhezhi He, Deliang Fan*
 
 ### 7. Exogenous Synthesis & Autonomic Weight Compilation (EWSM & AWCM) (6 papers)
 
 - `MIT Computer Science and Artificial Intelligence Laboratory (CSAIL) Research Release 2026` **Sparks of Weight-Space Programming: LLMs Can Natively Read and Write Neural Network Weights** — *Rikiya Takehi, Jayden Teoh, Alex Zhang, Omar Khattab*
 - `arXiv 2026` **Language Models Can Rewrite Their Own Weights** — *Jiajun Fan, Neil He, Changyi Yang et al.* [[arXiv:2611.21885](https://arxiv.org/abs/2611.21885)]
-- `arXiv 2024` **Neural Network Diffusion** — *Kai Wang, Zhaopan Xu, Yukun Zhou et al.* [[arXiv:2402.13144](https://arxiv.org/abs/2402.13144)]
+- `ICML 2024` **Neural Network Diffusion** — *Kai Wang, Dongwen Tang, Boya Zeng et al.* [[arXiv:2402.13144](https://arxiv.org/abs/2402.13144)]
 - `NeurIPS 2023` **Permutation Equivariant Neural Functionals** — *Allan Zhou, Kaien Yang, Kaylee Burns et al.*
 - `ICML 2023` **Equivariant Architectures for Learning in Deep Weight Spaces** — *Aviv Navon, Aviv Shamsian, Idan Achituve et al.*
 - `NeurIPS 2022` **Hyper-Representations as Generative Models: Sampling Unseen Neural Network Weights** — *Konstantin Schürholt, Boris Knyazev, Xavier Giró-i-Nieto, Damian Borth*
@@ -305,10 +300,10 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `ICLR 2025` **Scaling LLM Test-Time Compute Optimally Can Be More Effective Than Scaling Model Parameters** — *Charlie Snell, Jaehoon Lee, Kelvin Xu, Aviral Kumar*
 - `ICLR 2025` **OpenHands: An Open Platform for AI Software Developers as Generalist Agents** — *Xingyao Wang, Boxuan Li, Yufan Song et al.*
 - `arXiv 2025` **DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning** — *DeepSeek-AI* [[arXiv:2501.12948](https://arxiv.org/abs/2501.12948)]
+- `arXiv 2025` **Darwin Gödel Machine: Open-Ended Evolution of Self-Improving Agents** — *Jenny Zhang, Shengran Hu, Cong Lu et al.* [[arXiv:2505.22954](https://arxiv.org/abs/2505.22954)]
 - `ICLR 2025` **Automated Design of Agentic Systems** — *Shengran Hu, Cong Lu, Jeff Clune*
 - `arXiv 2025` **AlphaEvolve: A Coding Agent for Scientific and Algorithmic Discovery** — *Alexander Novikov, Ngân Vu, Marvin Eisenberger et al.* [[arXiv:2506.13131](https://arxiv.org/abs/2506.13131)]
 - `arXiv 2025` **A Self-Improving Coding Agent** — *Maxime Robeyns, Martin Szummer, Laurence Aitchison* [[arXiv:2504.15228](https://arxiv.org/abs/2504.15228)]
-- `arXiv 2025` **** — *Jenny Zhang, Shengran Hu, Cong Lu et al.* [[arXiv:2505.22954](https://arxiv.org/abs/2505.22954)]
 - `TMLR 2024` **Voyager: An Open-Ended Embodied Agent with Large Language Models** — *Guanzhi Wang, Yuqi Xie, Yunfan Jiang et al.*
 - `ICLR 2024` **ToolLLM: Facilitating Large Language Models to Master 16000+ Real-World APIs** — *Yujia Qin, Shihao Liang, Yining Ye et al.*
 - `arXiv 2024` **The AI Scientist: Towards Fully Automated Open-Ended Scientific Discovery** — *Chris Lu, Cong Lu, Robert Tjarko Lange et al.* [[arXiv:2408.06292](https://arxiv.org/abs/2408.06292)]
@@ -332,9 +327,9 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `ICLR 2025` **Tamper-Resistant Safeguards for Open-Weight LLMs** — *Rishub Tamirisa, Bhrugu Bharathi, Long Phan et al.*
 - `arXiv 2025` **Qwen3 Technical Report** — *Qwen Team* [[arXiv:2505.09388](https://arxiv.org/abs/2505.09388)]
 - `Nature 2025` **Optimizing AI Systems by Backpropagating Language Model Feedback** — *Mert Yuksekgonul, Federico Bianchi, Joseph Boen et al.*
+- `ACL 2025` **Gödel Agent: A Self-Referential Agent Framework for Recursive Self-Improvement** — *Xunjian Yin, Xinyi Wang, Liangming Pan et al.* [[arXiv:2410.04444](https://arxiv.org/abs/2410.04444)]
 - `arXiv 2025` **Absolute Zero: Reinforced Self-Play Reasoning with Zero Data** — *Andrew Zhao, Yiran Wu, Yang Yue et al.* [[arXiv:2505.03335](https://arxiv.org/abs/2505.03335)]
 - `ICLR 2025` **AFlow: Automating Agentic Workflow Generation** — *Jiayi Zhang, Jinyu Xiang, Zhaoyang Yu et al.*
-- `ACL 2025` **** — *Xunjian Yin, Xinyi Wang, Liangming Pan et al.* [[arXiv:2410.04444](https://arxiv.org/abs/2410.04444)]
 - `COLM 2024` **V-STaR: Training Verifiers for Self-Taught Reasoners** — *Arian Hosseini, Xingdi Yuan, Nikolay Malkin et al.*
 - `ICLR 2024` **Sparse Autoencoders Find Highly Interpretable Features in Language Models** — *Hoagy Cunningham, Aidan Ewart, Logan Riggs et al.*
 - `NeurIPS 2024` **Safe LoRA: The Silver Lining of Reducing Safety Risks when Fine-Tuning Large Language Models** — *Chia-Yi Hsu, Yu-Lin Tsai, Chih-Hsun Lin et al.*

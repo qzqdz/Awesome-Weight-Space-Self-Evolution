@@ -869,120 +869,130 @@
         "ref_context_tokens": 0,
         "stream_avg_acc": 0.0,
         "v2_upgrade_acc": 0.0,
-        "anchor_acc": 100.0,
+        "anchor_acc": 95.0,
         "spectral_norm": 0.0
       },
       "Zero-Grad Directional Surgery": {
         "ref_context_tokens": 0,
         "stream_avg_acc": 0.0,
         "v2_upgrade_acc": 0.0,
-        "anchor_acc": 95.0,
-        "spectral_norm": 2.3154
+        "anchor_acc": 100.0,
+        "spectral_norm": 2.3134
       },
       "Sequential LoRA-TTT": {
         "ref_context_tokens": 0,
         "stream_avg_acc": 12.5,
         "v2_upgrade_acc": 0.0,
-        "anchor_acc": 90.0,
-        "spectral_norm": 5.1491,
-        "mean_6round_acc": 43.35
+        "anchor_acc": 70.0,
+        "spectral_norm": 4.8491,
+        "mean_6round_acc": 42.16
       },
       "EWC-LoRA-TTT": {
         "ref_context_tokens": 0,
         "stream_avg_acc": 12.5,
         "v2_upgrade_acc": 0.0,
-        "anchor_acc": 95.0,
-        "spectral_norm": 4.6374,
-        "mean_6round_acc": 42.16
+        "anchor_acc": 100.0,
+        "spectral_norm": 4.1509,
+        "mean_6round_acc": 43.35
       },
       "DoRA-TTT": {
         "ref_context_tokens": 0,
         "stream_avg_acc": 12.5,
         "v2_upgrade_acc": 0.0,
-        "anchor_acc": 90.0,
-        "spectral_norm": 4.39,
+        "anchor_acc": 95.0,
+        "spectral_norm": 4.2312,
         "mean_6round_acc": 42.16
       },
       "O-LoRA": {
         "ref_context_tokens": 0,
-        "stream_avg_acc": 56.25,
-        "v2_upgrade_acc": 83.33,
-        "anchor_acc": 90.0,
-        "spectral_norm": 3.8843,
-        "mean_6round_acc": 56.6
+        "stream_avg_acc": 18.75,
+        "v2_upgrade_acc": 0.0,
+        "anchor_acc": 95.0,
+        "spectral_norm": 4.0673,
+        "mean_6round_acc": 41.12
       },
       "AlphaEdit Null-Space TTT": {
         "ref_context_tokens": 0,
         "stream_avg_acc": 12.5,
         "v2_upgrade_acc": 0.0,
         "anchor_acc": 100.0,
-        "spectral_norm": 4.0925,
-        "mean_6round_acc": 41.96
+        "spectral_norm": 3.8664,
+        "mean_6round_acc": 45.73
       },
       "TIES-Merging": {
         "ref_context_tokens": 0,
         "stream_avg_acc": 0.0,
         "v2_upgrade_acc": 0.0,
-        "anchor_acc": 70.0,
-        "spectral_norm": 3.9219
+        "anchor_acc": 35.0,
+        "spectral_norm": 3.8729
       },
       "DARE-Merging": {
         "ref_context_tokens": 0,
         "stream_avg_acc": 0.0,
         "v2_upgrade_acc": 0.0,
         "anchor_acc": 95.0,
-        "spectral_norm": 2.1893
+        "spectral_norm": 2.1209
       },
       "Sleep-Replay + Null-Space TTT": {
         "ref_context_tokens": 0,
         "stream_avg_acc": 100.0,
         "v2_upgrade_acc": 100.0,
         "anchor_acc": 95.0,
-        "spectral_norm": 4.6112,
+        "spectral_norm": 4.8,
         "mean_6round_acc": 98.81
       },
       "Full-History ICL (Raw Docs)": {
         "ref_context_tokens": 391,
         "stream_avg_acc": 68.75,
-        "v2_upgrade_acc": 50.0,
-        "anchor_acc": 100.0,
-        "spectral_norm": 0.0
+        "v2_upgrade_acc": 66.67,
+        "anchor_acc": 95.0,
+        "spectral_norm": 0.0,
+        "mean_6round_acc": 52.33
+      },
+      "Deduplicated-Buffer ICL (Active Docs)": {
+        "ref_context_tokens": 303,
+        "stream_avg_acc": 56.25,
+        "v2_upgrade_acc": 33.33,
+        "anchor_acc": 95.0,
+        "spectral_norm": 0.0,
+        "mean_6round_acc": 46.48
       }
     },
     "six_round_spectral_trajectories": {
       "Sequential LoRA-TTT": [
-        4.6433,
-        4.7261,
-        4.8382,
-        4.9519,
-        5.0489,
-        5.1491
+        4.698,
+        4.7203,
+        4.7475,
+        4.7736,
+        4.8314,
+        4.8491
       ],
       "EWC-LoRA-TTT": [
-        4.0073,
-        4.1157,
-        4.2495,
-        4.4541,
-        4.6003,
-        4.6374
+        4.0577,
+        4.0718,
+        4.0889,
+        4.109,
+        4.1286,
+        4.1509
       ],
       "AlphaEdit Null-Space TTT": [
-        4.0771,
-        4.0834,
-        4.0911,
-        4.089,
-        4.0916,
-        4.0925
+        3.8721,
+        3.869,
+        3.8686,
+        3.8655,
+        3.8653,
+        3.8664
       ],
       "Sleep-Replay + Null-Space TTT": [
-        4.5591,
+        4.5883,
         4.8001,
+        4.7999,
+        4.7298,
         4.8,
-        4.3102,
-        4.4165,
-        4.6112
+        4.8
       ]
-    }
+    },
+    "six_round_hardware": "NVIDIA GB10 (Unified Seed 42)"
   },
   "law4_safety_and_poisoning": {
     "nullspace_locality_vs_end_to_end": {
@@ -1001,7 +1011,8 @@
       "max_layer_local_proj_ratio_shielded": 2.63e-07,
       "end_to_end_logit_kl_unshielded_8layer": 1.413,
       "end_to_end_logit_kl_shielded_8layer": 0.0025,
-      "end_to_end_logit_kl_shielded_1layer": 0.0008
+      "end_to_end_logit_kl_shielded_1layer": 0.0008,
+      "end_to_end_logit_kl_unshielded_1layer": 0.0291
     },
     "controlled_stream_poisoning": {
       "total_stream_docs": 16,
@@ -1057,9 +1068,9 @@
   },
   "abliteration_subspace_geometry": {
     "2B": {
-      "num_layers": 25,
-      "active_modified_layers": 25,
-      "mean_rel_fro_pct": 2.3877,
+      "num_layers": 24,
+      "active_modified_layers": 24,
+      "mean_rel_fro_pct": 2.3911,
       "mean_stable_rank": 1.0045,
       "mean_top1_energy_pct": 99.55,
       "max_unshielded_core_cos": 0.4903,
@@ -1071,14 +1082,6 @@
           "stable_rank": 1.0051,
           "top1_energy_pct": 99.49,
           "unshielded_core_cos": 0.3351,
-          "shielded_core_cos": 1e-06
-        },
-        {
-          "layer": 0,
-          "rel_fro_pct": 2.3042,
-          "stable_rank": 1.0047,
-          "top1_energy_pct": 99.53,
-          "unshielded_core_cos": 0.3,
           "shielded_core_cos": 1e-06
         },
         {

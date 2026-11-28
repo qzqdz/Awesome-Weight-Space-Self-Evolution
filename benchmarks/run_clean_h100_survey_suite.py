@@ -1155,11 +1155,12 @@ def extract_input_subspace_basis(
             h.remove()
     bases: Dict[int, torch.Tensor] = {}
     for idx in range(len(target_layers)):
-        X = torch.cat(captured[idx], dim=0)  # [N_tok, d_in]
+        X = torch.cat(captured[idx], dim=0).to(dev)  # [N_tok, d_in]
         # Right singular vectors of X span the input activation subspace
         _, _, Vh = torch.linalg.svd(X, full_matrices=False)
         k = min(rank_k, Vh.shape[0])
         bases[idx] = Vh[:k].t().contiguous()  # [d_in, k]
+        del X, Vh
     return bases
 
 
@@ -1268,12 +1269,14 @@ def run_law3_unseen_and_multiround(qwen8b_path: str) -> Dict[str, Any]:
         lr: float = 2.5e-3,
         rank: int = 16,
         batch_size: int = 8,
+        seed: int = 42,
         right_proj_masks: Optional[Dict[int, torch.Tensor]] = None,
         ewc_ref: Optional[Tuple[List[torch.Tensor], List[torch.Tensor], float]] = None,
         ortho_prev_A: Optional[Dict[int, List[torch.Tensor]]] = None,
         use_dora: bool = False,
         spectral_cap: Optional[float] = None,
     ) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
+        torch.manual_seed(seed)
         A_list, B_list, m_list = [], [], []
         params = []
         for idx, lyr in enumerate(edit_layers):
@@ -1312,7 +1315,6 @@ def run_law3_unseen_and_multiround(qwen8b_path: str) -> Dict[str, Any]:
         all_in, all_mask, all_lbl = _prepare_sft_batch(tok, pairs, dev)
         all_pos = (all_mask.cumsum(-1) - 1).clamp(min=0)
         n_all = all_in.shape[0]
-        torch.manual_seed(42)
         opt = torch.optim.AdamW(params, lr=lr)
         try:
             for st in range(steps):
@@ -1442,7 +1444,7 @@ def run_law3_unseen_and_multiround(qwen8b_path: str) -> Dict[str, Any]:
     sig_seq = []
     round_accs_seq = []
     for r_spec in SIX_ROUND_SPECS:
-        train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=6.5e-4, rank=16)
+        train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=6.5e-4, rank=16, seed=42 + r_spec["round"])
         sig_seq.append(max_spectral_delta())
         rq, _ = collect_active_eval_queries(r_spec["round"])
         ra, _ = eval_api_queries(mdl, tok, rq, dev)
@@ -1458,7 +1460,7 @@ def run_law3_unseen_and_multiround(qwen8b_path: str) -> Dict[str, Any]:
     sig_ewc, accs_ewc = [], []
     for r_spec in SIX_ROUND_SPECS:
         prev_ws = [lyr.mlp.down_proj.weight.detach().float().clone() for lyr in edit_layers]
-        train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=5.5e-4, rank=16, ewc_ref=(prev_ws, fishers, 80.0))
+        train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=5.5e-4, rank=16, seed=42 + r_spec["round"], ewc_ref=(prev_ws, fishers, 80.0))
         sig_ewc.append(max_spectral_delta())
         rq, _ = collect_active_eval_queries(r_spec["round"])
         ra, _ = eval_api_queries(mdl, tok, rq, dev)
@@ -1474,7 +1476,7 @@ def run_law3_unseen_and_multiround(qwen8b_path: str) -> Dict[str, Any]:
     restore_orig()
     accs_dora = []
     for r_spec in SIX_ROUND_SPECS:
-        train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=5.5e-4, rank=16, use_dora=True)
+        train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=5.5e-4, rank=16, seed=42 + r_spec["round"], use_dora=True)
         rq, _ = collect_active_eval_queries(r_spec["round"])
         ra, _ = eval_api_queries(mdl, tok, rq, dev)
         accs_dora.append(ra)
@@ -1487,7 +1489,7 @@ def run_law3_unseen_and_multiround(qwen8b_path: str) -> Dict[str, Any]:
     prev_As: Dict[int, List[torch.Tensor]] = {ii: [] for ii in range(len(edit_layers))}
     accs_olora = []
     for r_spec in SIX_ROUND_SPECS:
-        _, new_As = train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=5.5e-4, rank=16, ortho_prev_A=prev_As)
+        _, new_As = train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=5.5e-4, rank=16, seed=42 + r_spec["round"], ortho_prev_A=prev_As)
         for ii, nA in enumerate(new_As):
             prev_As[ii].append(nA)
         rq, _ = collect_active_eval_queries(r_spec["round"])
@@ -1502,7 +1504,7 @@ def run_law3_unseen_and_multiround(qwen8b_path: str) -> Dict[str, Any]:
     locked_bases: Dict[int, torch.Tensor] = {ii: b.clone() for ii, b in anchor_basis.items()}
     sig_alpha, accs_alpha = [], []
     for r_spec in SIX_ROUND_SPECS:
-        train_lora_on_pairs(get_round_pairs(r_spec, include_distractors=False), steps=28, lr=5.5e-4, rank=16, right_proj_masks=locked_bases)
+        train_lora_on_pairs(get_round_pairs(r_spec, include_distractors=False), steps=28, lr=5.5e-4, rank=16, seed=42 + r_spec["round"], right_proj_masks=locked_bases)
         sig_alpha.append(max_spectral_delta())
         # Add current round query keys into permanent protected subspace (causes v1 -> v2 lock-in at Round 4!)
         r_queries = [q for api in r_spec["apis"] for q, _ in api["train_pairs"]]
@@ -1523,7 +1525,7 @@ def run_law3_unseen_and_multiround(qwen8b_path: str) -> Dict[str, Any]:
     per_round_deltas: List[List[torch.Tensor]] = []
     for r_spec in SIX_ROUND_SPECS:
         restore_orig()
-        d_r, _ = train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=5.5e-4, rank=16)
+        d_r, _ = train_lora_on_pairs(get_round_pairs(r_spec), steps=28, lr=5.5e-4, rank=16, seed=42 + r_spec["round"])
         per_round_deltas.append([x.cpu() for x in d_r])
 
     # 8. TIES-Merging (Yadav et al., 2023)
@@ -1571,6 +1573,7 @@ def run_law3_unseen_and_multiround(qwen8b_path: str) -> Dict[str, Any]:
             lr=5.2e-4,
             rank=16,
             batch_size=min(8, len(replay_pairs)),
+            seed=42 + r_spec["round"],
             right_proj_masks=anchor_basis,
             spectral_cap=4.80,
         )

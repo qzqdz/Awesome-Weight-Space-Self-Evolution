@@ -1,13 +1,22 @@
 % =========================================================================
-% Comprehensive Bibliography: Weight-Space Self-Evolution Survey (212 Curated References)
+% Comprehensive Bibliography: Weight-Space Self-Evolution Survey (100+ Refs)
 % =========================================================================
 
 % --- I. Historical & Neurobiological Foundations ---
 @misc{turing1947lecture,
   title={Lecture to the {London Mathematical Society} on 20 {February} 1947},
   author={Turing, Alan M.},
-  howpublished={In B. J. Copeland (Ed.), \emph{The Essential Turing} (pp. 378--394), Oxford University Press},
-  year={1947}
+  howpublished={London Mathematical Society},
+  year={1947},
+  note={Reprinted in B. J. Copeland (Ed.), \emph{The Essential Turing} (pp. 378--394), Oxford University Press, 2004}
+}
+
+@book{aho2006compilers,
+  title={Compilers: Principles, Techniques, and Tools},
+  author={Aho, Alfred V. and Lam, Monica S. and Sethi, Ravi and Ullman, Jeffrey D.},
+  edition={2nd},
+  publisher={Addison-Wesley},
+  year={2006}
 }
 
 @article{turing1950computing,
@@ -20,10 +29,11 @@
   year={1950}
 }
 
-@phdthesis{schmidhuber1987evolutionary,
+@mastersthesis{schmidhuber1987evolutionary,
   title={Evolutionary Principles in Self-Referential Learning, or on Learning How to Learn: The Meta-Meta-... Hook},
   author={Schmidhuber, J{\"u}rgen},
   school={Technische Universit{\"a}t M{\"u}nchen},
+  type={Diploma thesis},
   year={1987}
 }
 
@@ -231,7 +241,7 @@
 
 @inproceedings{arditi2024refusal,
   title={Refusal in Language Models Is Mediated by a Single Direction},
-  author={Arditi, Andy and Obeso, Oscar and Syed, Aaquib and Paleka, Daniel and Rimsky, Nina and Gurnee, Wes and Nanda, Neel},
+  author={Arditi, Andy and Obeso, Oscar and Syed, Aaquib and Paleka, Daniel and Panickssery, Nina and Gurnee, Wes and Nanda, Neel},
   booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
   volume={37},
   year={2024}
@@ -744,7 +754,7 @@
   year={2025}
 }
 
-% --- VIII. Weight-Space Learning, Exogenous Synthesis & Autonomic Compilation ---
+% --- VIII. Weight-Space Learning, Weight-Space Programming & Self-Rewriting ---
 @inproceedings{navon2023equivariant,
   title={Equivariant Architectures for Learning in Deep Weight Spaces},
   author={Navon, Aviv and Shamsian, Aviv and Achituve, Idan and Fetaya, Ethan and Chechik, Gal and Maron, Haggai},
@@ -755,7 +765,7 @@
 
 @inproceedings{zhou2023permutation,
   title={Permutation Equivariant Neural Functionals},
-  author={Zhou, Allan and Yang, Kaien and Burns, Kaylee and Cardona, Adriano and Jiang, Yiding and Sokota, Samuel and Kolter, J. Zico and Finn, Chelsea},
+  author={Zhou, Allan and Yang, Kaien and Burns, Kaylee and Cardace, Adriano and Jiang, Yiding and Sokota, Samuel and Kolter, J. Zico and Finn, Chelsea},
   booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
   volume={36},
   year={2023}
@@ -770,12 +780,11 @@
   year={2022}
 }
 
-@inproceedings{erkoh2024hyper,
+@article{erkoh2024hyper,
   title={Neural Network Diffusion},
   author={Wang, Kai and Tang, Dongwen and Zeng, Boya and Yin, Yida and Xu, Zhaopan and Zhou, Yukun and Zang, Zelin and Darrell, Trevor and Liu, Zhuang and You, Yang},
-  booktitle={Proceedings of the 41st International Conference on Machine Learning (ICML)},
-  year={2024},
-  note={arXiv:2402.13144}
+  journal={arXiv preprint arXiv:2402.13144},
+  year={2024}
 }
 
 @misc{takehi2026sparks,
@@ -783,6 +792,14 @@
   author={Takehi, Rikiya and Teoh, Jayden and Zhang, Alex and Khattab, Omar},
   howpublished={MIT Computer Science and Artificial Intelligence Laboratory (CSAIL) Research Release},
   month={November},
+  year={2026},
+  note={\url{https://weightspaceprogramming.tech}}
+}
+
+@article{ling2026selfwsp,
+  title={{Self-WSP}: Can Language Models Improve Themselves Through Weight-Space Programming?},
+  author={Ling, Guoming and Zhong, Shanshan and Zhang, Kaixuan and Huang, Zhongzhan},
+  journal={arXiv preprint arXiv:2611.28833},
   year={2026}
 }
 
@@ -886,8 +903,9 @@
   title={Model Merging in {LLMs}, {MLLMs}, and Beyond: Methods, Theories, Applications and Opportunities},
   author={Yang, Enneng and Shen, Li and Guo, Guibing and Wang, Xingwei and Cao, Xiaochun and Zhang, Jie and Tao, Dacheng},
   journal={ACM Computing Surveys},
-  year={2025},
-  note={arXiv:2408.07666}
+  volume={58\penalty0 (8), Article 216},
+  year={2026},
+  note={doi:\href{https://doi.org/10.1145/3787849}{10.1145/3787849}}
 }
 
 @article{han2024parameter,
@@ -926,7 +944,7 @@
 
 @article{zhang2024memorysurvey,
   title={A Survey on the Memory Mechanism of Large Language Model based Agents},
-  author={Zhang, Zeyu and Bo, Xiaohe and Ma, Chen and Li, Rui and Chen, Xu and Dai, Quanyu and Zhu, Jieming and Dong, Zhenhua and Wen, Ji-Rong},
+  author={Zhang, Zeyu and Dai, Quanyu and Bo, Xiaohe and Ma, Chen and Li, Rui and Chen, Xu and Zhu, Jieming and Dong, Zhenhua and Wen, Ji-Rong},
   journal={ACM Transactions on Information Systems},
   year={2025}
 }
@@ -1136,7 +1154,7 @@
 
 @inproceedings{ge2024incontext,
   title={In-Context Autoencoder for Context Compression in a Large Language Model},
-  author={Ge, Tao and Jing, Hu and Wang, Lei and Wang, Xun and Chen, Si-Qing and Wei, Furu},
+  author={Ge, Tao and Hu, Jing and Wang, Lei and Wang, Xun and Chen, Si-Qing and Wei, Furu},
   booktitle={International Conference on Learning Representations (ICLR)},
   year={2024}
 }
@@ -1241,7 +1259,7 @@
 
 @inproceedings{huang2024emrmerging,
   title={{EMR-Merging}: Tuning-Free High-Performance Model Merging},
-  author={Huang, Chenyu and Ye, Peng and Chen, Tao and He, Tong and Ouyang, Wanli and Qian, Chen},
+  author={Huang, Chenyu and Ye, Peng and Chen, Tao and He, Tong and Yue, Xiangyu and Ouyang, Wanli},
   booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
   volume={37},
   year={2024}
@@ -1294,7 +1312,7 @@
 
 @inproceedings{he2022hyperprompt,
   title={{HyperPrompt}: Prompt-Based Task-Conditioning of Transformers},
-  author={He, Yun and Zheng, Steven and Tay, Yi and Gupta, Jai and Du, Yu and Aribandi, Vamsi and Zhao, Zhe and Li, YaGuang and Chen, Zuoqiang and Metzler, Donald and Cheng, Heng-Tze and Chi, Ed H.},
+  author={He, Yun and Zheng, Steven and Tay, Yi and Gupta, Jai and Du, Yu and Aribandi, Vamsi and Zhao, Zhe and Li, Yaguang and Chen, Zhao and Metzler, Donald and Cheng, Heng-Tze and Chi, Ed H.},
   booktitle={Proceedings of the 39th International Conference on Machine Learning (ICML)},
   pages={8678--8690},
   year={2022}
@@ -1396,7 +1414,7 @@
   title={Do {NOT} Think That Much for 2+3=? On the Overthinking of {o1}-Like {LLMs}},
   author={Chen, Xingyu and Xu, Jiahao and Liang, Tian and He, Zhiwei and Pang, Jianhui and Yu, Dian and Song, Linfeng and Liu, Qiuzhi and Zhou, Mengfei and Zhang, Zhuosheng and Wang, Rui and Tu, Zhaopeng and Mi, Haitao and Yu, Dong},
   journal={arXiv preprint arXiv:2412.21187},
-  year={2025}
+  year={2024}
 }
 
 @inproceedings{xiao2024efficient,
@@ -1430,7 +1448,7 @@
 }
 
 @article{yuksekgonul2025textgrad,
-  title={Optimizing {AI} Systems by Backpropagating Language Model Feedback},
+  title={Optimizing generative {AI} by backpropagating language model feedback},
   author={Yuksekgonul, Mert and Bianchi, Federico and Boen, Joseph and Liu, Sheng and Lu, Pan and Huang, Zhi and Guestrin, Carlos and Zou, James},
   journal={Nature},
   volume={639},
@@ -1439,7 +1457,7 @@
 }
 
 @inproceedings{yin2025godel,
-  title={{G{\"o}del Agent}: A Self-Referential Agent Framework for Recursive Self-Improvement},
+  title={{G{\"o}del Agent: A Self-Referential Agent Framework for Recursively Self-Improvement}},
   author={Yin, Xunjian and Wang, Xinyi and Pan, Liangming and Lin, Li and Wan, Xiaojun and Wang, William Yang},
   booktitle={Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (ACL)},
   year={2025},
@@ -1539,11 +1557,12 @@
   year={2020}
 }
 
-@inproceedings{nostalgebraist2020logitlens,
-  title={Interpreting {GPT}: The Logit Lens},
+@misc{nostalgebraist2020logitlens,
   author={{nostalgebraist}},
-  booktitle={LessWrong Technical Report},
-  year={2020}
+  title={Interpreting {GPT}: The logit lens},
+  howpublished={LessWrong, August 31},
+  year={2020},
+  note={\url{https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens}}
 }
 
 @inproceedings{cunningham2024sparse,
@@ -1649,6 +1668,49 @@
   title={{Qwen3} Technical Report},
   author={{Qwen Team}},
   journal={arXiv preprint arXiv:2505.09388},
+  year={2025}
+}
+
+@misc{qwen2026qwen35,
+  title={{Qwen3.5}: Towards Native Multimodal Agents},
+  author={{Qwen Team}},
+  howpublished={Qwen Official Technical Blog, \url{https://qwen.ai/blog}},
+  month={February},
+  year={2026}
+}
+
+@article{yang2024qwen25,
+  title={{Qwen2.5} Technical Report},
+  author={Yang, An and Yang, Baosong and Zhang, Beichen and Hui, Binyuan and Zheng, Bo and Yu, Bowen and Li, Chengyuan and Liu, Dayiheng and Huang, Fei and Wei, Haoran and others},
+  journal={arXiv preprint arXiv:2412.15115},
+  year={2024}
+}
+
+@article{cobbe2021gsm8k,
+  title={Training Verifiers to Solve Math Word Problems},
+  author={Cobbe, Karl and Kosaraju, Vineet and Bavarian, Mohammad and Chen, Mark and Jun, Heewoo and Kaiser, Lukasz and Plappert, Matthias and Tworek, Jerry and Hilton, Jacob and Nakano, Reiichiro and Hesse, Christopher and Schulman, John},
+  journal={arXiv preprint arXiv:2110.14168},
+  year={2021}
+}
+
+@inproceedings{hendrycks2021math,
+  title={Measuring Mathematical Problem Solving With the {MATH} Dataset},
+  author={Hendrycks, Dan and Burns, Collin and Kadavath, Saurav and Arora, Akul and Basart, Steven and Tang, Eric and Song, Dawn and Steinhardt, Jacob},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks Track},
+  year={2021}
+}
+
+@inproceedings{lightman2024lets,
+  title={Let's Verify Step by Step},
+  author={Lightman, Hunter and Kosaraju, Vineet and Burda, Yura and Edwards, Harri and Baker, Bowen and Lee, Teddy and Leike, Jan and Schulman, John and Sutskever, Ilya and Cobbe, Karl},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2024}
+}
+
+@inproceedings{wu2025osatlas,
+  title={{OS-ATLAS}: A Foundation Action Model for Generalist {GUI} Agents},
+  author={Wu, Zhiyong and Wu, Zhenyu and Xu, Fangzhi and Wang, Yian and Sun, Qiushi and Jia, Chengyou and Cheng, Kanzhi and Ding, Zichen and Chen, Liheng and Liang, Paul Pu and Qiao, Yu},
+  booktitle={International Conference on Learning Representations (ICLR)},
   year={2025}
 }
 

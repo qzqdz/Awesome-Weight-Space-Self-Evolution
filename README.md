@@ -4,10 +4,10 @@
 
 **Official Reading List & Unified Empirical Benchmark for *"A Survey of Weight-Space Self-Evolution in Large Language Models"***
 
-[![Papers Indexed](https://img.shields.io/badge/Papers_Indexed-212-2563eb.svg)](#curated-paper-index-212-works)
+[![Papers Indexed](https://img.shields.io/badge/Papers_Indexed-220-2563eb.svg)](#curated-paper-index-220-works)
 [![Paradigms](https://img.shields.io/badge/Taxonomy-SPM_%7C_OTAM_%7C_EWSM_%7C_AWCM_%7C_HWGM-7c3aed.svg)](#five-compilation-paradigms)
-[![Benchmark](https://img.shields.io/badge/Empirical_Laws-4_Reproducible_Suites-059669.svg)](#unified-empirical-benchmark--four-governing-laws)
-[![BibTeX](https://img.shields.io/badge/BibTeX-212_Entries-d97706.svg)](bibliography/references.bib)
+[![Benchmark](https://img.shields.io/badge/Empirical_Findings-4_Reproducible_Suites-059669.svg)](#unified-empirical-benchmark--four-empirical-findings)
+[![BibTeX](https://img.shields.io/badge/BibTeX-220_Entries-d97706.svg)](bibliography/references.bib)
 [![License: MIT](https://img.shields.io/badge/License-MIT-slate.svg)](LICENSE)
 
 </div>
@@ -16,7 +16,7 @@
   <img src="assets/fig0_teaser.png" width="96%" alt="Breaking the Training-Inference Wall via Autonomic Weight Compilation"/>
 </p>
 
-> **Overview:** Deployed LLMs traditionally obey a rigid *"train-once, freeze-forever"* contract, relying either on offline cluster retraining or inference-time context scaffolds with recurring $\mathcal{O}(N)$ token overhead. **Weight-Space Self-Evolution** dismantles the wall between training and inference by granting adaptation pipelines, external teacher models, and the deployed model itself direct read–write agency over internal parameters. Viewed through our unifying **Autonomic Weight Compilation** framework ($\Pi_{\text{comp}} \equiv \pi_{\Theta_t}$), recent systems inspect hidden states and author localized tensor patches in isolated Python sandboxes—eliminating $\mathcal{O}(N)$ reference-context growth and incurring zero extra FLOPs/token when updates are merged directly into base weights.
+> **Overview:** Deployed LLMs traditionally follow a *"train-once, freeze-forever"* schedule, relying either on gradient-based retraining or on inference-time context scaffolds with recurring $\mathcal{O}(N)$ token overhead. **Weight-Space Self-Evolution** grants adaptation pipelines, external teacher models, or the deployed model itself direct read and write access to neural parameters. Viewed through **Autonomic Weight Compilation** ($\Pi_{\text{comp}} \equiv \pi_{\Theta_t}$), recent systems inspect hidden states and write localized tensor patches in isolated Python sandboxes, avoiding $\mathcal{O}(N)$ reference-context growth and adding zero extra FLOPs/token once updates are merged into base weights.
 
 ---
 
@@ -24,10 +24,9 @@
 - [Ecosystem Taxonomy](#ecosystem-taxonomy)
 - [The Self-Hosting Neural Compiler Triad & Evolution Timeline](#the-self-hosting-neural-compiler-triad--evolution-timeline)
 - [Five Compilation Paradigms (`SPM` / `OTAM` / `EWSM` / `AWCM` / `HWGM`)](#five-compilation-paradigms)
-- [Unified Empirical Benchmark & Four Governing Laws](#unified-empirical-benchmark--four-governing-laws)
+- [Unified Empirical Benchmark & Four Empirical Findings](#unified-empirical-benchmark--four-empirical-findings)
 - [Quick Start: Reproducing Plots & Benchmarks](#quick-start-reproducing-plots--benchmarks)
-- [Curated Paper Index (212 Works)](#curated-paper-index-212-works)
-- [Citation](#citation)
+- [Curated Paper Index (220 Works)](#curated-paper-index-220-works)
 
 ---
 
@@ -43,7 +42,7 @@
 
 We formalize dynamic parameter evolution as a **Constrained Weight-Space Markov Decision Process ($\mathcal{M}_{\mathcal{W}}$)** over the closed-loop triad $\mathcal{S}_{\text{comp}} = \langle \Theta_t, \Pi_{\text{comp}}, \mathcal{E}_{\text{gate}} \rangle$:
 1. **Mutable Weight Substrate & Core ISA ($\Theta_t$):** Structured MLP matrices, low-rank adapters, and layer-local right-nullspace shields;
-2. **Introspective Compiler Policy ($\Pi_{\text{comp}}$):** Progressing across four generations—*Analytical Patcher* $\to$ *Online TTT & Hypernetwork* $\to$ *Exogenous Cross-Compiler* $\to$ *Autonomic Self-Hosting Compiler* ($\Pi_{\text{comp}} \equiv \pi_{\Theta_t}$);
+2. **Introspective Compiler Policy ($\Pi_{\text{comp}}$):** Progressing across four generations: *Analytical Patcher* $\to$ *Online TTT & Hypernetwork* $\to$ *Exogenous Cross-Compiler* $\to$ *Autonomic Self-Hosting Compiler* ($\Pi_{\text{comp}} \equiv \pi_{\Theta_t}$);
 3. **Transactional Gate Sandbox ($\mathcal{E}_{\text{gate}}$):** Enforcing shadow-twin execution, *Commit-or-Revert* / *Eviction Equivalence* verification, and episodic consolidation.
 
 <p align="center">
@@ -66,32 +65,34 @@ We formalize dynamic parameter evolution as a **Constrained Weight-Space Markov 
   <img src="assets/fig4_five_paradigms.png" width="92%" alt="Five Compilation Paradigms"/>
 </p>
 
-| Paradigm | Compiler Agency ($\Pi_{\text{comp}}$) | Gradient-Free? | Teacher-Free? | Dense Skill Compile | Multi-Round Drift / Echo Risk | Systems Analogy |
-| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
-| **`SPM`** *(Surgical Parameter Patching)* | Algebraic Solver | Yes | Yes | Moderate | High (Static v1 Lock-in) | Binary Hot-Patch |
-| **`OTAM`** *(Online Trajectory Adaptation)* | Local SGD / Hypernet | Partial | Yes | **Very High** | High (Belief Echo Chamber) | JIT Trace Lowering |
-| **`EWSM`** *(Exogenous Weight Synthesis)* | External Frontier LLM | Yes | No | Low–Moderate | Moderate | Cross-Compiler |
-| **`AWCM`** *(Autonomic Weight Compilation)* | **Same Model ($\pi_{\Theta_t}$)** | **Yes (REPL) / Dual** | **Yes** | Low (Unblocking)* | Low (Gated) | **Self-Hosting Patcher** |
-| **`HWGM`** *(Homeostatic Wake–Sleep Layer)* | Dual-Phase Replay & SVD Screen | Composable | Optional | Preserved | **Bounded ($\|\Delta W_t\|_2 \le \gamma$)** | Linker & Guard |
+| Paradigm | Compiler Agency ($\Pi_{\text{comp}}$) | Gradient-Free? | Teacher-Free? | Tested Model Scales | Fault Self-Healing | Dense New Skill Compile | Echo-Chamber / Drift Risk | Systems Analogy |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **`SPM`** *(Surgical Parameter Patching)* | Algebraic Solver / Diff | Yes (Opt.) | Yes | Any Scale | No | Moderate | High (Static v1 Lock-in) | Binary Hot-Patch |
+| **`OTAM`** *(Online Trajectory Adaptation)* | SGD / Hypernetwork | Partial | Yes | `125M–1.3B` (`TTT`) / `1B–8B` (`TTT/SEAL`) | No | **Very High** | High (Belief Echo Chamber) | JIT Trace Lowering |
+| **`EWSM`** *(Exogenous Weight Synthesis)* | External Teacher LLM | Yes | No | Target $\ge$ `0.8B` | Yes | Low–Mod. | Moderate | Cross-Compiler |
+| **`AWCM`** *(Autonomic Weight Compilation)* | **Same Model ($\pi_{\Theta_t}$)** | **Yes (REPL) / Dual** | **Yes** | `27B` Only in Tested REPL (`0.8B` Self-WSP†) | **Yes (No $W_0$)** | Low (Unblocking)* | Low (Gated) | **Self-Hosting Patcher** |
+| **`HWGM`** *(Homeostatic Wake–Sleep Layer)* | Replay + Subspace Gate | Composable | Optional | Composable Layer | Preserved | Preserved | **Bounded ($\|\Delta W_\ell\|_2 \le \tau_{\max}$)** | Linker & Guard |
+
+> \*REPL-based `AWCM` targets circuit unblocking and outlier clipping, whereas *Epistemic Belief Compilation* (§10.1 of the survey) is a conceptual blueprint pairing `AWCM` with associative lowering. †`Self-WSP` (Ling et al., 2026) reports `0.8B` gains under an outer selection loop where random search achieves comparable gains.
 
 ---
 
-## Unified Empirical Benchmark & Four Governing Laws
+## Unified Empirical Benchmark & Four Empirical Findings
 
-Executed on `NVIDIA H100 80GB HBM3` GPUs in `bfloat16`, this repository provides a clean, self-contained benchmark suite spanning `Qwen3.5-{2B, 4B, 9B, 27B}`, `Qwen2.5-1.5B-Instruct`, `Qwen2.5-7B-Instruct`, and `Qwen3-8B` across published adaptation baselines:
+Executed across `NVIDIA H100 80GB HBM3` GPUs and an `NVIDIA GB10` workstation in `bfloat16`, this repository provides a self-contained benchmark suite spanning `Qwen3.5-{2B, 4B, 9B, 27B}`, `Qwen2.5-1.5B-Instruct`, `Qwen2.5-7B-Instruct`, and `Qwen3-8B` across published adaptation baselines:
 
-1. **Law 1 — Scale Emergence Cliff & Exogenous Cross-Compilation (`Qwen3.5-2B/4B/9B/27B`):** Endogenous Python REPL patching exhibits a sharp metacognitive scale cliff—sub-$10\text{B}$ models suffer dimensional/indexing hallucinations or $>100\times$ broadcast norm blow-ups when unguarded, whereas `Qwen3.5-27B` synthesizes calibrated rank-1 projections ($30.0\% \to 80.0\%$ on our $196$-token budget suite; $57.2\% \to 63.8\%$ on held-out math in Fan et al., 2026). Using `Qwen3.5-27B` as an exogenous cross-compiler (`EWSM`) bypasses the sub-$10\text{B}$ cliff for `2B`/`4B`/`9B` targets.
-2. **Law 2 — Reference-Free $200\sigma$ Weight-Outlier Repair (`1.5B`–`27B`):** Under contiguous $8$-row $200\sigma$ Gaussian corruption (Layer $30$ on `Qwen3.5-27B`, $196.1\times$ row-RMS outlier), few-shot gradient LoRA-TTT fails ($0.0\%$) due to RMSNorm saturation, whereas reference-free outlier localization paired with `27B` editor-authored repair ($65.0\%$) or standalone $50\times$ row-RMS zeroing ($65.0\%$, $100.0\%$ recovery without $W_0$) restores accuracy in seconds.
-3. **Law 3 — Expressivity Boundary & 6-Round Non-Stationary API Evolution (`Qwen3-8B`):** On $1$-shot strictly unseen symbolic APIs ($N=8$, zero reference-context tokens), zero-gradient directional surgery scores $0.0\%$ vs. $100.0\%$ for associative LoRA-TTT. Across $6$ non-stationary rounds with Round-$4$ `v1 -> v2` deprecations, static input null-space projection (`AlphaEdit`) locks Round-$1$ keys and blocks `v2` upgrades, whereas episodic sleep replay paired with general-anchor null-space projection and spectral norm capping achieves $100.0\%$ active accuracy and $100.0\%$ `v2` migration with $0$ reference-context tokens.
-4. **Law 4 — Layer-Local vs. Multi-Layer Null-Space & Stream Poisoning Screening:** Streaming SVD confirms that safety-refusal abliteration is rank-$1$ ($99.55\%$ top-$1$ singular energy on `Qwen3.5-2B`) with $0.49$–$0.76$ core-subspace overlap. While layer-local right-nullspace projection reduces $\|\Delta W_\ell V_{\text{anchor},\ell}\|_F / \|\Delta W_\ell\|_F$ to $\le 10^{-6}$, multi-layer nonlinear propagation across $8$ edited layers still induces nonzero end-to-end output KL ($0.0025$ vs. $0.0008$ single-layer), motivating end-to-end verification alongside Logit-Lens singular-vector screening against stream backdoors.
+1. **Finding 1: Protocol-Conditioned Self-Editing vs. Exogenous Cross-Compilation (`Qwen3.5-2B/4B/9B/27B`):** Under our tested 4-session Python REPL protocol on H100, `27B` was the only checkpoint to improve (`30.0% -> 80.0%`, `+50 pp`, `4/4` executable and `2/4` committed), whereas `2B` (`1/4` executable, `0/4` committed), `4B` (`1/4` executable, `0/4` committed), and `9B` (`1/4` executable, `1/4` committed, `-5 pp`) failed via axis mismatches, float indexing, or practice overfitting. Using `Qwen3.5-27B` as an exogenous cross-compiler (`EWSM`) raises `4B` by `+30 pp` (`10.0% -> 40.0%`) on H100 while `2B` drops `-10 pp` (`25.0% -> 15.0%`). On `N = 100` GSM8K multi-budget and prompt controls on `Qwen3.5-4B` (GB10), the `27B`-compiled patch improves over *Frozen Std.* by `+12.0 pp` at `196–256` tokens (`p <= 0.012`), trails *Frozen Ultra-Concise* at `196` tokens (`41.0%` vs. `72.0%`, `-31.0 pp`), and preserves full unconstrained competence at `512` tokens where brevity prompts saturate (`93.0%` vs. `72.0%`, `+21.0 pp`, `p = 4.9e-5`).
+2. **Finding 2: Reference-Free `200σ` Fault Repair Across `1.5B`–`27B`:** Under contiguous `8`-row `200σ` Gaussian corruption (Layer `30` on `Qwen3.5-27B`, `196.1x` row-RMS / `1455x` max-to-median element outlier), `8`-step supervised gradient LoRA-TTT scores `0.0%` across all scales (`1.5B–27B`) due to RMSNorm saturation. Without clean reference weights $W_0$, editor-authored repair recovers `100.0%` on `8B` (`100.0%`) and `27B` (`65.0%`), and deterministic `50x` row-RMS zeroing matches or exceeds pristine accuracy across all four tested checkpoints. Extended to `Qwen3-8B` (`N = 100` GSM8K, GB10) on `1`-layer and `4`-layer distributed faults, whole-model `50x`/`100x` row-RMS zeroing restores `82.0%` pristine accuracy (`TP = 32/32, FP = 0`, `KL = 0.00236` vs. `37.0%` and `KL = 1.15474` for blind global rescaling), while a `36`-layer threshold sweep characterizes a zero-false-positive plateau across $\tau \in [20\times, 100\times]$.
+3. **Finding 3: Tested Directional Projection vs. Associative Schema Adaptation (`Qwen3-8B`):** On `1`-shot strictly unseen symbolic APIs (`N = 8`, `0` reference-context tokens), our tested directional `down_proj` edit scores `0.0%` (`0/8`) versus `100.0%` (`8/8`) for associative LoRA-TTT. Across a unified `12`-configuration, `6`-round non-stationary enterprise API stream with Round-4 `v1 -> v2` deprecations and `3`-seed query decomposition on GB10, `AlphaEdit`-inspired projected LoRA and `O-LoRA` both write Round-4 `v2` bindings immediately (`100.0 ± 0.0%`) yet decay to `0.0 ± 0.0%` final `v2` retention (`12.5%` and `16.7 ± 3.6%` active). *Deduplicated-Buffer ICL* (`303` tokens/query) reaches `56.2%` active (`33.3%` `v2`), whereas combining associative LoRA-TTT with deduplicated episodic sleep replay, anchor right-nullspace projection, and spectral norm capping achieves `100.0 ± 0.0%` active accuracy and `100.0 ± 0.0%` `v2` migration (`99.6 ± 0.7%` 6-round mean) at `0` reference-context tokens.
+4. **Finding 4: Layer-Local vs. Multi-Layer Null-Space Shielding & Stream Poisoning Screening:** Streaming SVD confirms that safety-refusal abliteration concentrates `>= 99.55%` energy in rank-1 (`0.49` core-subspace overlap on `2B`, `0.76` on `9B`). Layer-local right-nullspace projection drives anchor residual to `<= 1e-6` (`2.63e-7` on `Qwen3-8B`), reducing end-to-end anchor KL from `0.0291 -> 0.0008` (`1` layer) and `1.4130 -> 0.0025` (`8` layers). Under controlled `M = 16` fixed-budget stream poisoning, Logit-Lens SVD screening sustains `0.0%` Trigger ASR and `85.7%–100.0%` clean API accuracy on trailing-chunk payloads where Norm Clipping and TIES-Merging fail; three boundary probes document limits on benign security flags (`50.0% -> 25.0%` FPs), stealth non-lexeme backdoors (`100.0%` ASR), and cross-chunk dispersed poisoning (`100.0%` ASR at coarse 4-doc chunks, resolved to `0.0%` ASR / `100.0%` clean accuracy via per-API 2-doc micro-chunks).
 
 <p align="center">
-  <img src="assets/fig5_scale_emergence.png" width="49%" alt="Law 1 Scale Emergence"/>
-  <img src="assets/fig6_fault_self_healing.png" width="49%" alt="Law 2 Fault Self-Healing"/>
+  <img src="assets/fig5_scale_emergence.png" width="49%" alt="Finding 1: Protocol-Conditioned Self-Editing & Cross-Compilation"/>
+  <img src="assets/fig6_fault_self_healing.png" width="49%" alt="Finding 2: Reference-Free Fault Repair"/>
 </p>
 <p align="center">
-  <img src="assets/fig7_unblocking_vs_acquisition.png" width="49%" alt="Law 3 Unblocking vs Skill Compilation"/>
-  <img src="assets/fig8_subspace_pitfalls.png" width="49%" alt="Law 4 Subspace Safety"/>
+  <img src="assets/fig7_unblocking_vs_acquisition.png" width="49%" alt="Finding 3: Tested Directional Edit vs. Associative LoRA"/>
+  <img src="assets/fig8_subspace_pitfalls.png" width="49%" alt="Finding 4: Null-Space Shielding & Stream Poisoning"/>
 </p>
 
 ---
@@ -103,18 +104,22 @@ git clone https://github.com/qzqdz/Awesome-Weight-Space-Self-Evolution.git
 cd Awesome-Weight-Space-Self-Evolution
 pip install -r requirements.txt
 
-# 1. Regenerate all 4 empirical law figures from verified H100 benchmark logs:
+# 1. Regenerate all 4 empirical figures from verified benchmark logs:
 python benchmarks/plot_empirical_laws.py
 
-# 2. Run the full self-contained 4-law empirical suite (Law 1-4 across 1.5B-27B):
+# 2. Run the H100 empirical suite (1.5B-27B):
 python benchmarks/run_clean_h100_survey_suite.py --only all --out benchmarks/results/clean_survey_benchmark.json
+
+# 3. Run the extended N=100, 3-seed, and dispersed-poisoning controls (GB10/workstation GPU):
+python benchmarks/run_supplementary_gb10_suite.py
+python benchmarks/run_audit_fixes_gb10.py
 ```
 
 ---
 
-## Curated Paper Index (212 Works)
+## Curated Paper Index (220 Works)
 
-All 212 papers are available in machine-readable BibTeX format in [`bibliography/references.bib`](bibliography/references.bib).
+All 220 references are available in machine-readable BibTeX format in [`bibliography/references.bib`](bibliography/references.bib).
 
 ### 1. Historical Roots, Fast Weights & Synaptic Homeostasis (20 papers)
 
@@ -137,12 +142,12 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `Proceedings of the 9th Annual Conference of the Cognitive Science Society 1987` **Using Fast Weights to Deblur Old Memories** — *Geoffrey E. Hinton, David C. Plaut*
 - `Technische Universität München 1987` **Evolutionary Principles in Self-Referential Learning, or on Learning How to Learn: The Meta-Meta-... Hook** — *Jürgen Schmidhuber*
 - `Mind 1950` **Computing Machinery and Intelligence** — *Alan M. Turing*
-- `In B. J. Copeland (Ed.), *The Essential Turing* (pp. 378–394), Oxford University Press 1947` **Lecture to the London Mathematical Society on 20 February 1947** — *Alan M. Turing*
+- `In B. J. Copeland (Ed.), *The Essential Turing* (pp. 378–394), Oxford University Press 2004 (Original lecture 1947)` **Lecture to the London Mathematical Society on 20 February 1947** — *Alan M. Turing*
 
-### 2. Related Surveys & Foundational Paradigms (23 papers)
+### 2. Related Surveys & Foundational Paradigms (27 papers)
 
-- `ACM CSUR 2025` **Model Merging in LLMs, MLLMs, and Beyond: Methods, Theories, Applications and Opportunities** — *Enneng Yang, Li Shen, Guibing Guo et al.* [[arXiv:2408.07666](https://arxiv.org/abs/2408.07666)]
-- `ACM Transactions on Information Systems 2025` **A Survey on the Memory Mechanism of Large Language Model based Agents** — *Zeyu Zhang, Xiaohe Bo, Chen Ma et al.*
+- `ACM CSUR 2026` **Model Merging in LLMs, MLLMs, and Beyond: Methods, Theories, Applications and Opportunities** — *Enneng Yang, Li Shen, Guibing Guo et al.* [`doi:10.1145/3787849`](https://doi.org/10.1145/3787849)
+- `ACM Transactions on Information Systems 2025` **A Survey on the Memory Mechanism of Large Language Model based Agents** — *Zeyu Zhang, Quanyu Dai, Xiaohe Bo et al.*
 - `arXiv 2025` **A Survey of Vibe Coding with Large Language Models** — *Yuyao Ge, Lingrui Mei, Zenghao Duan et al.* [[arXiv:2510.12399](https://arxiv.org/abs/2510.12399)]
 - `arXiv 2025` **A Survey of Self-Evolving Agents: What, When, How, and Where to Evolve on the Path to Artificial Super Intelligence** — *Huan-ang Gao, Jiayi Geng, Wenyue Hua et al.* [[arXiv:2507.21046](https://arxiv.org/abs/2507.21046)]
 - `arXiv 2025` **A Survey of Context Engineering for Large Language Models** — *Lingrui Mei, Jiayu Yao, Yuyao Ge et al.* [[arXiv:2507.13334](https://arxiv.org/abs/2507.13334)]
@@ -153,15 +158,19 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `ACM CSUR 2024` **Knowledge Editing for Large Language Models: A Survey** — *Song Wang, Yaochen Zhu, Haochen Liu et al.*
 - `arXiv 2024` **DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models** — *Zhihong Shao, Peiyi Wang, Qihao Zhu et al.* [[arXiv:2402.03300](https://arxiv.org/abs/2402.03300)]
 - `Frontiers of Computer Science 2024` **A Survey on Large Language Model based Autonomous Agents** — *Lei Wang, Chen Ma, Xueyang Feng et al.*
+- `ICLR 2024` **Let's Verify Step by Step** — *Hunter Lightman, Vineet Kosaraju, Yura Burda et al.*
 - `IEEE TPAMI 2024` **A Comprehensive Survey of Continual Learning: Theory, Method and Application** — *Liyuan Wang, Xingxing Zhang, Hang Su, Jun Zhu*
 - `Nature Mach. Intell. 2023` **Parameter-Efficient Fine-Tuning of Large-Scale Pre-Trained Language Models** — *Ning Ding, Yujia Qin, Guang Yang et al.*
 - `EMNLP 2023` **Editing Large Language Models: Problems, Methods, and Opportunities** — *Yunzhi Yao, Peng Wang, Bozhong Tian et al.*
 - `NeurIPS 2023` **Direct Preference Optimization: Your Language Model Is Secretly a Reward Model** — *Rafael Rafailov, Archit Sharma, Eric Mitchell et al.*
 - `NeurIPS 2022` **Training Language Models to Follow Instructions with Human Feedback** — *Long Ouyang, Jeffrey Wu, Xu Jiang et al.*
+- `NeurIPS 2021` **Measuring Mathematical Problem Solving With the MATH Dataset** — *Dan Hendrycks, Collin Burns, Saurav Kadavath et al.*
+- `arXiv 2021` **Training Verifiers to Solve Math Word Problems** — *Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian et al.* [[arXiv:2110.14168](https://arxiv.org/abs/2110.14168)]
 - `NeurIPS 2020` **Language Models Are Few-Shot Learners** — *Tom Brown, Benjamin Mann, Nick Ryder et al.*
 - `NeurIPS 2017` **Attention Is All You Need** — *Ashish Vaswani, Noam Shazeer, Niki Parmar et al.*
 - `2011` **Thinking, Fast and Slow** — *Daniel Kahneman*
 - `Nat. Rev. Neurosci. 2010` **The Memory Function of Sleep** — *Susanne Diekelmann, Jan Born*
+- `Addison-Wesley 2006` **Compilers: Principles, Techniques, and Tools (2nd ed.)** — *Alfred V. Aho, Monica S. Lam, Ravi Sethi, Jeffrey D. Ullman*
 - `Nature 2005` **Sleep-Dependent Memory Consolidation** — *Robert Stickgold*
 - `1959` **The Logic of Scientific Discovery** — *Karl R. Popper*
 
@@ -226,7 +235,7 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `COLM 2024` **Quiet-STaR: Language Models Can Teach Themselves to Think Before Speaking** — *Eric Zelikman, Georges Harik, Yijia Shao et al.*
 - `NeurIPS 2024` **Parallelizing Linear Transformers with the Delta Rule over Sequence Length** — *Songlin Yang, Bailin Wang, Yikang Zhang et al.*
 - `COLM 2024` **Mamba: Linear-Time Sequence Modeling with Selective State Spaces** — *Albert Gu, Tri Dao*
-- `ICLR 2024` **In-Context Autoencoder for Context Compression in a Large Language Model** — *Tao Ge, Hu Jing, Lei Wang et al.*
+- `ICLR 2024` **In-Context Autoencoder for Context Compression in a Large Language Model** — *Tao Ge, Jing Hu, Lei Wang et al.*
 - `TMLR 2024` **Beyond Human Data: Scaling Self-Training for Problem-Solving with Language Models** — *Avi Singh, John D. Co-Reyes, Rishabh Agarwal et al.*
 - `NeurIPS 2023` **Propagating Knowledge Updates to LMs Through Distillation** — *Shankar Padmanabhan, Yasumasa Onoe, Michael J. Q. Zhang et al.*
 - `NeurIPS 2023` **Learning to Compress Prompts with Gist Tokens** — *Jesse Mu, Xiang Lisa Li, Noah Goodman*
@@ -242,7 +251,7 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 
 - `ICLR 2025` **Transformer-Squared: Self-Adaptive LLMs** — *Qi Sun, Edoardo Cetin, Yujin Tang* [[arXiv:2501.06252](https://arxiv.org/abs/2501.06252)]
 - `Nature Mach. Intell. 2025` **Evolutionary Optimization of Model Merging Recipes** — *Takuya Akiba, Makoto Shing, Yujin Tang et al.*
-- `arXiv 2025` **Do NOT Think That Much for 2+3=? On the Overthinking of o1-Like LLMs** — *Xingyu Chen, Jiahao Xu, Tian Liang et al.* [[arXiv:2412.21187](https://arxiv.org/abs/2412.21187)]
+- `arXiv 2024` **Do NOT Think That Much for 2+3=? On the Overthinking of o1-Like LLMs** — *Xingyu Chen, Jiahao Xu, Tian Liang et al.* [[arXiv:2412.21187](https://arxiv.org/abs/2412.21187)]
 - `ICLR 2024` **ZipIt!: Merging Models from Different Tasks without Training** — *George Stoica, Daniel Bolya, Jakob Bjorner et al.*
 - `ICLR 2024` **VeRA: Vector-Based Random Matrix Adaptation** — *Dawid J. Kopiczko, Tijmen Blankevoort, Yuki M. Asano*
 - `ICML 2024` **Towards Scalable and Versatile Weight Space Learning** — *Konstantin Schürholt, Michael W. Mahoney, Damian Borth*
@@ -284,18 +293,20 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `ICLR 2020` **The Curious Case of Neural Text Degeneration** — *Ari Holtzman, Jan Buys, Li Du et al.*
 - `ICCV 2019` **Bit-Flip Attack: Crushing Neural Network with Progressive Bit Search** — *Adnan Siraj Rakin, Zhezhi He, Deliang Fan*
 
-### 7. Exogenous Synthesis & Autonomic Weight Compilation (EWSM & AWCM) (6 papers)
+### 7. Exogenous Synthesis & Autonomic Weight Compilation (EWSM & AWCM) (7 papers)
 
+- `arXiv 2026` **Self-WSP: Can Language Models Improve Themselves Through Weight-Space Programming?** — *Guoming Ling, Shanshan Zhong, Kaixuan Zhang, Zhongzhan Huang* [[arXiv:2611.28833](https://arxiv.org/abs/2611.28833)]
 - `MIT Computer Science and Artificial Intelligence Laboratory (CSAIL) Research Release 2026` **Sparks of Weight-Space Programming: LLMs Can Natively Read and Write Neural Network Weights** — *Rikiya Takehi, Jayden Teoh, Alex Zhang, Omar Khattab*
 - `arXiv 2026` **Language Models Can Rewrite Their Own Weights** — *Jiajun Fan, Neil He, Changyi Yang et al.* [[arXiv:2611.21885](https://arxiv.org/abs/2611.21885)]
-- `ICML 2024` **Neural Network Diffusion** — *Kai Wang, Dongwen Tang, Boya Zeng et al.* [[arXiv:2402.13144](https://arxiv.org/abs/2402.13144)]
+- `arXiv 2024` **Neural Network Diffusion** — *Kai Wang, Dongwen Tang, Boya Zeng et al.* [[arXiv:2402.13144](https://arxiv.org/abs/2402.13144)]
 - `NeurIPS 2023` **Permutation Equivariant Neural Functionals** — *Allan Zhou, Kaien Yang, Kaylee Burns et al.*
 - `ICML 2023` **Equivariant Architectures for Learning in Deep Weight Spaces** — *Aviv Navon, Aviv Shamsian, Idan Achituve et al.*
 - `NeurIPS 2022` **Hyper-Representations as Generative Models: Sampling Unseen Neural Network Weights** — *Konstantin Schürholt, Boris Knyazev, Xavier Giró-i-Nieto, Damian Borth*
 
-### 8. Explicit Belief States, Agentic Scaffolds & Code-Space RSI (25 papers)
+### 8. Explicit Belief States, Agentic Scaffolds & Code-Space RSI (26 papers)
 
 - `arXiv 2026` **Beyond Memory: Harnessing Long-Horizon Agents with Explicit Belief States** — *Yu Luo, Jiamin Jiang, Yimin Zuo et al.* [[arXiv:2610.01415](https://arxiv.org/abs/2610.01415)]
+- `ICLR 2025` **OS-ATLAS: A Foundation Action Model for Generalist GUI Agents** — *Zhiyong Wu, Zhenyu Wu, Fangzhi Xu et al.*
 - `ICLR 2025` **τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains** — *Shunyu Yao, Noah Shinn, Pedram Razavi, Karthik Narasimhan*
 - `ICLR 2025` **Scaling LLM Test-Time Compute Optimally Can Be More Effective Than Scaling Model Parameters** — *Charlie Snell, Jaehoon Lee, Kelvin Xu, Aviral Kumar*
 - `ICLR 2025` **OpenHands: An Open Platform for AI Software Developers as Generalist Agents** — *Xingyao Wang, Boxuan Li, Yufan Song et al.*
@@ -321,13 +332,14 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `NeurIPS 2022` **Chain-of-Thought Prompting Elicits Reasoning in Large Language Models** — *Jason Wei, Xuezhi Wang, Dale Schuurmans et al.*
 - `NeurIPS 2020` **Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks** — *Patrick Lewis, Ethan Perez, Aleksandra Piktus et al.*
 
-### 9. Epistemic Governance, Alignment Fragility & Anti-Poisoning (HWGM) (31 papers)
+### 9. Epistemic Governance, Alignment Fragility & Anti-Poisoning (HWGM) (33 papers)
 
+- `Qwen Official Technical Blog (Feb 2026)` **Qwen3.5: Towards Native Multimodal Agents** — *Qwen Team* [[Blog](https://qwen.ai/blog)]
 - `ICLR 2025` **Training Language Models to Self-Correct via Reinforcement Learning** — *Aviral Kumar, Vincent Zhuang, Rishabh Agarwal et al.*
 - `ICLR 2025` **Tamper-Resistant Safeguards for Open-Weight LLMs** — *Rishub Tamirisa, Bhrugu Bharathi, Long Phan et al.*
 - `arXiv 2025` **Qwen3 Technical Report** — *Qwen Team* [[arXiv:2505.09388](https://arxiv.org/abs/2505.09388)]
-- `Nature 2025` **Optimizing AI Systems by Backpropagating Language Model Feedback** — *Mert Yuksekgonul, Federico Bianchi, Joseph Boen et al.*
-- `ACL 2025` **Gödel Agent: A Self-Referential Agent Framework for Recursive Self-Improvement** — *Xunjian Yin, Xinyi Wang, Liangming Pan et al.* [[arXiv:2410.04444](https://arxiv.org/abs/2410.04444)]
+- `Nature 2025` **Optimizing Generative AI by Backpropagating Language Model Feedback** — *Mert Yuksekgonul, Federico Bianchi, Joseph Boen et al.*
+- `ACL 2025` **Gödel Agent: A Self-Referential Agent Framework for Recursively Self-Improvement** — *Xunjian Yin, Xinyi Wang, Liangming Pan et al.* [[arXiv:2410.04444](https://arxiv.org/abs/2410.04444)]
 - `arXiv 2025` **Absolute Zero: Reinforced Self-Play Reasoning with Zero Data** — *Andrew Zhao, Yiran Wu, Yang Yue et al.* [[arXiv:2505.03335](https://arxiv.org/abs/2505.03335)]
 - `ICLR 2025` **AFlow: Automating Agentic Workflow Generation** — *Jiayi Zhang, Jinyu Xiang, Zhaoyang Yu et al.*
 - `COLM 2024` **V-STaR: Training Verifiers for Self-Taught Reasoners** — *Arian Hosseini, Xingdi Yuan, Nikolay Malkin et al.*
@@ -340,6 +352,7 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `ICLR 2024` **Fine-Tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To!** — *Xiangyu Qi, Yi Zeng, Tinghao Xie et al.*
 - `ICLR 2024` **DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines** — *Omar Khattab, Arnav Singhvi, Paridhi Maheshwari et al.*
 - `ICML 2024` **Assessing the Brittleness of Safety Alignment via Pruning and Low-Rank Modifications** — *Boyi Wei, Kaixuan Huang, Yangsibo Huang et al.*
+- `arXiv 2024` **Qwen2.5 Technical Report** — *An Yang, Baosong Yang, Beichen Zhang et al.* [[arXiv:2412.15115](https://arxiv.org/abs/2412.15115)]
 - `arXiv 2023` **Sparks of Artificial General Intelligence: Early Experiments with GPT-4** — *Sébastien Bubeck, Varun Chandrasekaran, Ronen Eldan et al.* [[arXiv:2303.12712](https://arxiv.org/abs/2303.12712)]
 - `Proceedings of the 16th ACM Workshop on Artificial Intelligence and Security (AISec) 2023` **Not What You've Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection** — *Kai Greshake, Sahar Abdelnabi, Shailesh Mishra et al.*
 - `ICLR 2023` **Git Re-Basin: Merging Models modulo Permutation Symmetries** — *Samuel K. Ainsworth, Jonathan Hayase, Siddhartha Srinivasa*
@@ -349,25 +362,8 @@ All 212 papers are available in machine-readable BibTeX format in [`bibliography
 - `Proceedings of the 23rd International Conference on Artificial Intelligence and Statistics (AISTATS) 2020` **Orthogonal Gradient Descent for Continual Learning** — *Mehrdad Farajtabar, Navid Azizan, Alex Mott, Ang Li*
 - `ICML 2020` **Linear Mode Connectivity and the Lottery Ticket Hypothesis** — *Jonathan Frankle, Gintare Karolina Dziugaite, Daniel M. Roy, Michael Carbin*
 - `NeurIPS 2020` **Investigating Gender Bias in Language Models Using Causal Mediation Analysis** — *Jesse Vig, Sebastian Gehrmann, Yonatan Belinkov et al.*
-- `LessWrong Technical Report 2020` **Interpreting GPT: The Logit Lens** — *nostalgebraist*
+- `LessWrong, August 31, 2020` **Interpreting GPT: The Logit Lens** — *nostalgebraist* [[Post](https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens)]
 - `ICLR 2019` **Efficient Lifelong Learning with A-GEM** — *Arslan Chaudhry, Marc'Aurelio Ranzato, Marcus Rohrbach, Mohamed Elhoseiny*
 - `NeurIPS 2018` **Loss Surfaces, Mode Connectivity, and Fast Ensembling of DNNs** — *Timur Garipov, Pavel Izmailov, Dmitrii Podoprikhin et al.*
 - `Nature 2017` **Mastering the Game of Go without Human Knowledge** — *David Silver, Julian Schrittwieser, Karen Simonyan et al.*
 - `NeurIPS 2017` **Gradient Episodic Memory for Continual Learning** — *David Lopez-Paz, Marc'Aurelio Ranzato*
-
-
----
-
-## Citation
-
-If you find this survey, taxonomy, or benchmark useful in your research, please consider citing:
-
-```bibtex
-@article{weight_self_evolution_survey_2026,
-  title={A Survey of Weight-Space Self-Evolution in Large Language Models},
-  author={Weight-Space Self-Evolution Research Group},
-  journal={arXiv preprint},
-  year={2026},
-  note={https://github.com/qzqdz/Awesome-Weight-Space-Self-Evolution}
-}
-```
